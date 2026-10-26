@@ -49,12 +49,12 @@ struct RoadGameView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button { showHistory = true } label: {
-                        Label("履歴", systemImage: "clock.arrow.circlepath").labelStyle(.titleAndIcon)
+                        ToolbarTitle("履歴", systemImage: "clock.arrow.circlepath")
                     }
                 }
                 ToolbarItem(placement: .topBarLeading) {
                     Button { showRules = true } label: {
-                        Label("ルール", systemImage: "book").labelStyle(.titleAndIcon)
+                        ToolbarTitle("ルール", systemImage: "book")
                     }
                 }
                 if isLandscape {
@@ -71,12 +71,12 @@ struct RoadGameView: View {
                         .pickerStyle(.menu)
                         Toggle("珠盤路・下三路・問路も見る", isOn: $showAllRoads)
                     } label: {
-                        Label("表示", systemImage: "slider.horizontal.3").labelStyle(.titleAndIcon)
+                        ToolbarTitle("表示", systemImage: "slider.horizontal.3")
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { confirmNewShoe = true } label: {
-                        Label("新しいシュー", systemImage: "plus.rectangle.on.rectangle").labelStyle(.titleAndIcon)
+                        ToolbarTitle("新しいシュー", systemImage: "plus.rectangle.on.rectangle")
                     }
                 }
             }

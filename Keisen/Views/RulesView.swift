@@ -15,6 +15,7 @@ struct RulesView: View {
                     }
                     .pickerStyle(.segmented)
                     .frame(maxWidth: 420)
+                    .frame(maxWidth: .infinity)
 
                     if tab == "judge" {
                         ThirdCardJudge()
@@ -44,7 +45,24 @@ struct ThirdCardJudge: View {
     private var playerTwo: [CardRank]? { first2(player) }
     private var bankerTwo: [CardRank]? { first2(banker) }
 
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
+
     var body: some View {
+        // 横向きでは、カードを左・判定の流れを右に並べて1画面に収める
+        if verticalSizeClass == .compact {
+            HStack(alignment: .top, spacing: 16) {
+                picks.frame(maxWidth: .infinity)
+                stepsBox.frame(maxWidth: .infinity)
+            }
+        } else {
+            VStack(alignment: .leading, spacing: 12) {
+                picks
+                stepsBox
+            }
+        }
+    }
+
+    private var picks: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("配られたカードを順に選ぶと、3枚目を引くかどうかを出します。10・J・Q・K は 0、A は 1 と数えます。")
                 .font(.footnote)
@@ -53,18 +71,6 @@ struct ThirdCardJudge: View {
             handRow("PLAYER", color: Theme.player, cards: $player, showThird: playerNeedsThird)
             handRow("BANKER", color: Theme.banker, cards: $banker, showThird: bankerNeedsThird)
 
-            VStack(alignment: .leading, spacing: 6) {
-                ForEach(Array(steps.enumerated()), id: \.offset) { _, line in
-                    Label(line, systemImage: "arrow.right.circle.fill")
-                        .font(.subheadline)
-                        .foregroundStyle(Theme.ink)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(12)
-            .background(Theme.sheet, in: RoundedRectangle(cornerRadius: 10))
-            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.line))
-
             Button("最初から選び直す") {
                 player = [nil, nil, nil]
                 banker = [nil, nil, nil]
@@ -72,6 +78,20 @@ struct ThirdCardJudge: View {
             .font(.footnote.bold())
             .foregroundStyle(Theme.muted)
         }
+    }
+
+    private var stepsBox: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            ForEach(Array(steps.enumerated()), id: \.offset) { _, line in
+                Label(line, systemImage: "arrow.right.circle.fill")
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.ink)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(Theme.sheet, in: RoundedRectangle(cornerRadius: 10))
+        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.line))
     }
 
     // MARK: 判定
