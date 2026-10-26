@@ -1,4 +1,4 @@
-# 罫線ノート — 広告なしのバカラ罫線アプリ
+# バカラノート — 広告なしのバカラ罫線・チップ記録アプリ
 
 - ユーザーへの返答は**必ず日本語**で。
 - ユーザーが自分で使うために作った、広告のないバカラ罫線の記録アプリ。App Store で公開する。
@@ -8,7 +8,7 @@
 ## 技術
 - SwiftUI、iOS 17 以降、Swift 5 モード。外部ライブラリなし。
 - プロジェクトは `Keisen.xcodeproj`（スキーム `Keisen`）、ソースは `Keisen/`。Xcode の「フォルダ同期グループ」なので、ファイルを置くだけでビルド対象になる。
-- 表示名は「罫線ノート」、バンドルIDは `com.tadahonami.keisen`。署名チームは pbxproj に入れていないので、Xcode の Signing & Capabilities でチームを選ぶ（または xcodebuild に `DEVELOPMENT_TEAM=...` を渡す）。
+- App Store の名前は「バカラノート - 罫線とチップの記録」（2026-10-26 に「罫線ノート」から変更）、ホーム画面の表示名は「バカラノート」、バンドルIDは `com.tadahonami.keisen`。署名チームは pbxproj に入れていないので、Xcode の Signing & Capabilities でチームを選ぶ（または xcodebuild に `DEVELOPMENT_TEAM=...` を渡す）。
 - `Keisen/Info.plist` には `ITSAppUsesNonExemptEncryption = NO` だけ。アプリアイコンはアルファなしの 1024px PNG。
 - `Keisen/PrivacyInfo.xcprivacy`：データ収集なし、UserDefaults（チップ回数の保存）の理由 CA92.1。
 - `Keisen.storekit`：チップのテスト用設定。スキームの Run → Options → StoreKit Configuration で選ぶとシミュレータで買える。

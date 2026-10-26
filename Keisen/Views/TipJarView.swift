@@ -12,7 +12,7 @@ struct TipJarView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("広告なしで使い続けられるように")
                             .font(.headline)
-                        Text("罫線ノートは広告を出さず、すべての機能を無料で使えます。気に入ったら、開発の応援としてチップを送ってもらえるとうれしいです。チップを送っても機能は変わりません。")
+                        Text("バカラノートは広告を出さず、すべての機能を無料で使えます。気に入ったら、開発の応援としてチップを送ってもらえるとうれしいです。チップを送っても機能は変わりません。")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
