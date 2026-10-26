@@ -13,6 +13,7 @@ struct RoadGameView: View {
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     /// 珠盤路・下三路・問路も出すか（はじめは大路だけ）
     @AppStorage("showAllRoads") private var showAllRoads = false
+    @AppStorage("tieStyle") private var tieStyle: TieStyle = .dot
 
     private var game: RoadGame { store.game }
     /// 子の端末に配る罫線（例のシューは配らない）
@@ -56,6 +57,16 @@ struct RoadGameView: View {
                 if isLandscape {
                     ToolbarItem(placement: .topBarLeading) {
                         Text(title).font(.headline).fixedSize()
+                    }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        Picker("大路のタイの印", selection: $tieStyle) {
+                            ForEach(TieStyle.allCases) { Text($0.title).tag($0) }
+                        }
+                        Toggle("珠盤路・下三路・問路も見る", isOn: $showAllRoads)
+                    } label: {
+                        Label("表示の設定", systemImage: "slider.horizontal.3")
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {

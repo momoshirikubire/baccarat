@@ -79,9 +79,22 @@ struct RoadGrid: View {
     }
 }
 
+/// 大路のタイの印。設定で選ぶ（はじめは「まる」）。
+enum TieStyle: String, CaseIterable, Identifiable {
+    case dot, slash
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .dot: "まる"
+        case .slash: "斜線"
+        }
+    }
+}
+
 struct BigRoadView: View {
     let road: Roads.BigRoad
     var cell: CGFloat = 22
+    @AppStorage("tieStyle") private var tieStyle: TieStyle = .dot
 
     var body: some View {
         let cells = Roads.place(road.columns)
@@ -91,12 +104,7 @@ struct BigRoadView: View {
             for c in cells {
                 let center = CGPoint(x: (CGFloat(c.x) + 0.5) * cell, y: (CGFloat(c.y) + 0.5) * cell)
                 Pen.ring(&ctx, center, radius: cell / 2 - 3.5, color: Theme.color(c.item.outcome), width: max(2.6, cell / 9))
-                if c.item.ties > 0 {
-                    Pen.slash(&ctx, center, radius: cell / 2 - 5, color: Theme.tie, width: 2.2)
-                    if c.item.ties > 1 {
-                        ctx.draw(Text("\(c.item.ties)").font(.system(size: cell * 0.45, weight: .bold)).foregroundStyle(Theme.ink), at: center)
-                    }
-                }
+                if c.item.ties > 0 { tieMark(&ctx, center, count: c.item.ties) }
                 if c.item.bankerPair {
                     Pen.dot(&ctx, CGPoint(x: CGFloat(c.x) * cell + 4.5, y: CGFloat(c.y) * cell + 4.5), radius: 2.6, color: Theme.banker)
                 }
@@ -104,8 +112,22 @@ struct BigRoadView: View {
                     Pen.dot(&ctx, CGPoint(x: CGFloat(c.x + 1) * cell - 4.5, y: CGFloat(c.y + 1) * cell - 4.5), radius: 2.6, color: Theme.player)
                 }
             }
-            if leadingTies > 0 {
-                Pen.slash(&ctx, CGPoint(x: cell / 2, y: cell / 2), radius: cell / 2 - 5, color: Theme.tie, width: 2.2)
+            if leadingTies > 0 { tieMark(&ctx, CGPoint(x: cell / 2, y: cell / 2), count: leadingTies) }
+        }
+    }
+
+    /// タイの印。2回以上なら回数を添える。
+    private func tieMark(_ ctx: inout GraphicsContext, _ center: CGPoint, count: Int) {
+        switch tieStyle {
+        case .dot:
+            Pen.dot(&ctx, center, radius: cell * 0.24, color: Theme.tie)
+            if count > 1 {
+                ctx.draw(Text("\(count)").font(.system(size: cell * 0.34, weight: .bold)).foregroundStyle(Color.white), at: center)
+            }
+        case .slash:
+            Pen.slash(&ctx, center, radius: cell / 2 - 5, color: Theme.tie, width: max(2.2, cell / 12))
+            if count > 1 {
+                ctx.draw(Text("\(count)").font(.system(size: cell * 0.45, weight: .bold)).foregroundStyle(Theme.ink), at: center)
             }
         }
     }
