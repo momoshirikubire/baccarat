@@ -71,6 +71,8 @@ struct RoadGrid: View {
                 .onChange(of: usedColumns) { proxy.scrollTo(target, anchor: target == "start" ? .leading : .trailing) }
                 // 最初は幅 0 で測られることがあるので、幅が決まって行き先が変わったら合わせ直す
                 .onChange(of: target) { proxy.scrollTo(target, anchor: target == "start" ? .leading : .trailing) }
+                // 大路だけ表示に切り替えたときなど、マスの大きさが変わったら合わせ直す
+                .onChange(of: cellSize) { proxy.scrollTo(target, anchor: target == "start" ? .leading : .trailing) }
             }
         }
         .frame(height: height)
@@ -203,7 +205,7 @@ struct RoadsBoard: View {
     var body: some View {
         let big = Roads.bigRoad(hands)
         VStack(spacing: 10) {
-            RoadCard(title: "大路", detail: streak(big)) { BigRoadView(road: big, cell: (showAll ? 22 : 30) * scale) }
+            RoadCard(title: "大路", detail: streak(big)) { BigRoadView(road: big, cell: bigCell) }
             if showAll {
                 RoadCard(title: "珠盤路") { BeadPlateView(game: game, hands: hands, cell: 26 * scale) }
                 ForEach(DerivedRoad.allCases) { road in
@@ -211,6 +213,12 @@ struct RoadsBoard: View {
                 }
             }
         }
+    }
+
+    /// 大路だけのときは、空いた場所を使って大きく描く（横向きは高さに収まる大きさ）
+    private var bigCell: CGFloat {
+        if showAll { return 22 * scale }
+        return scale > 1 ? 42 : 38
     }
 
     private func streak(_ big: Roads.BigRoad) -> String? {
