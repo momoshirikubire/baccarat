@@ -24,7 +24,7 @@ struct RoadGameView: View {
     @State private var announcement: ResultAnnouncement?
 
     private var game: RoadGame { store.game }
-    private var title: String { "\(game.title)・\(store.current.hands.count) 手" }
+    private var title: String { "\(store.current.hands.count) 手" }
 
     /// iPhone を横にしたとき（高さが詰まる）は、罫線を大きくして入力盤を右に置く
     private var isLandscape: Bool { verticalSizeClass == .compact }
@@ -56,13 +56,14 @@ struct RoadGameView: View {
             .navigationTitle(isLandscape ? "" : title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                // 使い方はいつでも見えるように、いちばん左に置く
+                if let modeButton {
+                    ToolbarItem(placement: .topBarLeading) { modeButton }
+                }
                 ToolbarItem(placement: .topBarLeading) {
                     Button { showHistory = true } label: {
                         ToolbarTitle("履歴", systemImage: "clock.arrow.circlepath")
                     }
-                }
-                if let modeButton {
-                    ToolbarItem(placement: .topBarLeading) { modeButton }
                 }
                 ToolbarItem(placement: .topBarLeading) {
                     Button { showRules = true } label: {
@@ -70,6 +71,7 @@ struct RoadGameView: View {
                     }
                 }
                 if isLandscape {
+                    // ボタンが入りきるように、横向きでは手の数だけを短く出す
                     ToolbarItem(placement: .topBarLeading) {
                         Text(title).font(.headline).fixedSize()
                     }

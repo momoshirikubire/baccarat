@@ -107,7 +107,7 @@ private struct DealerTableView: View {
     @State private var showManage = false
     @State private var showHistory = false
     @State private var confirmNewShoe = false
-    @AppStorage("showAllRoads") private var showAllRoads = false
+    @AppStorage("roads.showAll") private var showAllRoads = false
     @AppStorage("tieStyle") private var tieStyle: TieStyle = .dot
     @AppStorage("speakResults") private var speakResults = true
     @State private var announcement: ResultAnnouncement?
@@ -132,6 +132,7 @@ private struct DealerTableView: View {
                 if let table = chips.table { band(table) }
                 HStack(spacing: 0) {
                     GeometryReader { geo in
+                        // 上に参加者の帯があって高さが足りないので、罫線画面のような細い入力盤にはしない
                         RoadBoardColumn(hands: shoe.current.hands, isSample: shoe.isSample,
                                         height: geo.size.height, showAll: $showAllRoads)
                     }
@@ -185,17 +186,13 @@ private struct DealerTableView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) { ModeButton(chips: chips) }
                 ToolbarItem(placement: .topBarLeading) {
-                    Button { showHistory = true } label: {
-                        ToolbarTitle("履歴", systemImage: "clock.arrow.circlepath")
-                    }
-                }
-                ToolbarItem(placement: .topBarLeading) {
                     Button { showRules = true } label: {
                         ToolbarTitle("ルール", systemImage: "book")
                     }
                 }
                 ToolbarItem(placement: .topBarLeading) {
-                    Text("\(isPlaying ? "記録係" : "親")・\(sharedHands.count) 手").font(.headline).fixedSize()
+                    // ボタンが入りきるように、手の数だけを短く出す
+                    Text("\(sharedHands.count) 手").font(.headline).fixedSize()
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showManage = true } label: {
@@ -214,9 +211,17 @@ private struct DealerTableView: View {
                         ToolbarTitle("表示", systemImage: "slider.horizontal.3")
                     }
                 }
+                // 横向きでもボタンが全部見えるように、シューのことは1つのメニューにまとめる
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button { confirmNewShoe = true } label: {
-                        ToolbarTitle("新しいシュー", systemImage: "plus.rectangle.on.rectangle")
+                    Menu {
+                        Button { confirmNewShoe = true } label: {
+                            Label("新しいシューを始める", systemImage: "plus.rectangle.on.rectangle")
+                        }
+                        Button { showHistory = true } label: {
+                            Label("過去のシュー", systemImage: "clock.arrow.circlepath")
+                        }
+                    } label: {
+                        ToolbarTitle("シュー", systemImage: "rectangle.stack")
                     }
                 }
             }
@@ -363,24 +368,30 @@ struct RoadBoardColumn: View {
     var isSample = false
     let height: CGFloat
     @Binding var showAll: Bool
+    /// 大路だけを大きく置く（集計とボタンは出さない。集計は右の入力盤に出る）
+    var compact = false
 
     var body: some View {
         ScrollView {
             VStack(spacing: 10) {
-                StatsBar(game: .baccarat, shoe: Shoe(hands: isSample ? [] : hands))
-                RoadsBoard(game: .baccarat, hands: isSample ? [] : hands, scale: 1.35, showAll: showAll,
-                           fitCell: max(20, min(42, (height - 130) / CGFloat(Roads.rows))))
-                Button {
-                    withAnimation(.easeOut(duration: 0.2)) { showAll.toggle() }
-                } label: {
-                    Label(showAll ? "大路だけにする" : "珠盤路・下三路・問路も見る",
-                          systemImage: showAll ? "chevron.up" : "chevron.down")
-                        .font(.footnote.bold())
-                        .frame(maxWidth: .infinity, minHeight: 36)
+                if !compact {
+                    StatsBar(game: .baccarat, shoe: Shoe(hands: isSample ? [] : hands))
                 }
-                .foregroundStyle(Theme.muted)
+                RoadsBoard(game: .baccarat, hands: isSample ? [] : hands, scale: 1.35, showAll: showAll,
+                           fitCell: max(20, min(compact ? 80 : 42, (height - (compact ? 52 : 130)) / CGFloat(Roads.rows))))
+                if !compact {
+                    Button {
+                        withAnimation(.easeOut(duration: 0.2)) { showAll.toggle() }
+                    } label: {
+                        Label(showAll ? "大路だけにする" : "珠盤路・下三路・問路も見る",
+                              systemImage: showAll ? "chevron.up" : "chevron.down")
+                            .font(.footnote.bold())
+                            .frame(maxWidth: .infinity, minHeight: 36)
+                    }
+                    .foregroundStyle(Theme.muted)
+                }
             }
-            .padding(12)
+            .padding(compact ? 8 : 12)
         }
         .background(Theme.background)
     }

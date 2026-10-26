@@ -99,7 +99,7 @@ private struct PlayerTableView: View {
     @State private var shownUntil = Date.distantPast
     @State private var showManage = false
     @State private var showRules = false
-    @AppStorage("showAllRoads") private var showAllRoads = false
+    @AppStorage("roads.showAll") private var showAllRoads = false
     @AppStorage("tieStyle") private var tieStyle: TieStyle = .dot
     @AppStorage("speakResults") private var speakResults = true
 
@@ -150,7 +150,7 @@ private struct PlayerTableView: View {
                     }
                 }
                 ToolbarItem(placement: .topBarLeading) {
-                    Text("\(table?.name ?? "テーブル")・\(table?.hands.count ?? 0) 手").font(.headline).fixedSize()
+                    Text("\(table?.hands.count ?? 0) 手").font(.headline).fixedSize()
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showManage = true } label: {
