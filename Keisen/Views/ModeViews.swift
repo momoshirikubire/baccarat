@@ -99,7 +99,7 @@ struct ModePickerView: View {
     private func card(_ mode: AppMode, icon: String, title: String, role: String?, detail: String) -> some View {
         Button { onPick(mode) } label: {
             VStack(alignment: .leading, spacing: 6) {
-                Image(systemName: icon).font(.title2)
+                Image(systemName: icon).font(.title2).frame(height: 30, alignment: .bottomLeading)
                 Text(title)
                     .font(.headline)
                     .fixedSize(horizontal: false, vertical: true)
