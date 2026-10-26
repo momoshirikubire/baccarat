@@ -34,6 +34,7 @@ private struct ChipStartView: View {
     @State private var tableName = "テーブル"
     @State private var startingChips = 1000
     @State private var hostPlays = true
+    @State private var bankerCommission = true
     @State private var joining: ChipStore.FoundTable?
     @State private var code = ""
 
@@ -60,14 +61,15 @@ private struct ChipStartView: View {
                     Text("pt").foregroundStyle(.secondary)
                 }
                 Toggle("自分も参加する", isOn: $hostPlays)
+                Toggle("バンカーの勝ちから手数料5%を引く", isOn: $bankerCommission)
                 Button("テーブルを作る") {
                     let name = tableName.trimmingCharacters(in: .whitespaces)
-                    store.createTable(name: name.isEmpty ? "テーブル" : name, startingChips: startingChips, hostPlays: hostPlays)
+                    store.createTable(name: name.isEmpty ? "テーブル" : name, startingChips: startingChips, hostPlays: hostPlays, bankerCommission: bankerCommission)
                 }
             } header: {
                 Text("親になる")
             } footer: {
-                Text("親の iPhone がテーブルを持ちます。1台だけで全員のぶんを記録することも、近くのみんなの iPhone をつなぐこともできます。")
+                Text("親の iPhone がテーブルを持ちます。1台だけで全員のぶんを記録することも、近くのみんなの iPhone をつなぐこともできます。バカラの画面でベットを入れると、親が勝敗を入れたときに精算されます。")
             }
 
             Section {

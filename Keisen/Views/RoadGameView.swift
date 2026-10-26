@@ -3,12 +3,17 @@ import SwiftUI
 /// バカラ・ドラゴンタイガーの罫線画面
 struct RoadGameView: View {
     let store: ShoeStore
+    /// チップのテーブルの親のとき、ベット欄を出して勝敗で精算する
+    var chips: ChipStore? = nil
+    @State private var showChips = false
     @State private var bankerPair = false
     @State private var playerPair = false
     @State private var confirmNewShoe = false
     @State private var showHistory = false
 
     private var game: RoadGame { store.game }
+    /// 子の端末に配る罫線（例のシューは配らない）
+    private var sharedHands: [Hand] { store.isSample ? [] : store.current.hands }
 
     var body: some View {
         NavigationStack {
@@ -36,6 +41,9 @@ struct RoadGameView: View {
                         Label("過去のシュー", systemImage: "clock.arrow.circlepath")
                     }
                 }
+                if chips != nil {
+                    ToolbarItem(placement: .topBarLeading) { ChipScreenButton(isPresented: $showChips) }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { confirmNewShoe = true } label: {
                         Label("新しいシュー", systemImage: "plus.square.on.square")
@@ -44,25 +52,39 @@ struct RoadGameView: View {
             }
             .tipButton()
             .safeAreaInset(edge: .bottom, spacing: 0) {
-                InputDeck(
-                    game: game,
-                    hands: store.current.hands,
-                    bankerPair: $bankerPair,
-                    playerPair: $playerPair,
-                    canUndo: store.canUndo,
-                    onResult: { outcome in
-                        store.record(outcome, bankerPair: bankerPair, playerPair: playerPair)
-                        bankerPair = false
-                        playerPair = false
-                    },
-                    onUndo: { store.undo() }
-                )
+                VStack(spacing: 0) {
+                    if let chips, chips.role == .host, chips.table != nil {
+                        ChipBetBar(chips: chips)
+                            .background(Theme.deck)
+                    }
+                    InputDeck(
+                        game: game,
+                        hands: store.current.hands,
+                        bankerPair: $bankerPair,
+                        playerPair: $playerPair,
+                        canUndo: store.canUndo,
+                        onResult: { outcome in
+                            store.record(outcome, bankerPair: bankerPair, playerPair: playerPair)
+                            bankerPair = false
+                            playerPair = false
+                            chips?.handRecorded(store.current)
+                        },
+                        onUndo: {
+                            store.undo()
+                            chips?.handUndone(store.current)
+                        }
+                    )
+                }
             }
+            .onAppear { chips?.syncHands(sharedHands) }
+            .onChange(of: chips?.table == nil) { chips?.syncHands(sharedHands) }
+            .sheet(isPresented: $showChips) { if let chips { ChipView(store: chips) } }
             .confirmationDialog("新しいシューを始めますか？", isPresented: $confirmNewShoe, titleVisibility: .visible) {
                 Button("新しいシューを始める") {
                     store.startNewShoe()
                     bankerPair = false
                     playerPair = false
+                    chips?.syncHands(sharedHands)
                 }
                 Button("キャンセル", role: .cancel) {}
             } message: {

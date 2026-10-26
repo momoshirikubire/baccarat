@@ -14,7 +14,7 @@ struct KeisenApp: App {
     var body: some Scene {
         WindowGroup {
             TabView(selection: $tab) {
-                RoadGameView(store: baccarat)
+                BaccaratView(shoe: baccarat, chips: chips)
                     .tabItem { Label("バカラ", systemImage: "suit.diamond.fill") }
                     .tag("baccarat")
                 RoadGameView(store: dragonTiger)

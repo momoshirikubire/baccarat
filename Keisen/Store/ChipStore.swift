@@ -71,10 +71,10 @@ final class ChipStore: NSObject {
 
     // MARK: - 親
 
-    func createTable(name: String, startingChips: Int, hostPlays: Bool) {
+    func createTable(name: String, startingChips: Int, hostPlays: Bool, bankerCommission: Bool = true) {
         rememberName()
         stopBrowsing()
-        var t = ChipTable(name: name, startingChips: max(0, startingChips))
+        var t = ChipTable(name: name, startingChips: max(0, startingChips), bankerCommission: bankerCommission)
         if hostPlays { t.join(id: myID, name: displayName) }
         table = t
         code = String(format: "%04d", Int.random(in: 0...9999))
@@ -91,10 +91,8 @@ final class ChipStore: NSObject {
     }
 
     func removeMember(_ id: UUID) {
-        guard role == .host, var t = table, let m = t.member(id) else { return }
-        // 抜ける人の残高は場の外へ戻す（履歴に残す）
-        if m.balance > 0 { t.apply(ChipMove(from: .member(id), to: .bank, amount: m.balance, by: myID)) }
-        t.members.removeAll { $0.id == id }
+        guard role == .host, var t = table, t.member(id) != nil else { return }
+        t.removeMember(id, by: myID)
         table = t
         commit()
     }
@@ -192,6 +190,54 @@ final class ChipStore: NSObject {
         }
     }
 
+    /// バカラのベットを入れ直す。親は全員分、子は自分の分だけ（親に送って確かめてもらう）。
+    func placeBet(_ spots: [BetSpot: Int], for id: UUID) {
+        switch role {
+        case .host:
+            guard var t = table else { return }
+            if let problem = t.problem(withBet: spots, for: id) { notice = problem; return }
+            t.setBet(spots, for: id)
+            table = t
+            commit()
+        case .guest:
+            guard id == myID else { return }
+            if let problem = table?.problem(withBet: spots, for: id) { notice = problem; return }
+            send(.bet(member: id, spots: spots))
+        case .none:
+            break
+        }
+    }
+
+    // MARK: - 親のバカラの罫線から
+
+    /// 親が結果を記録したら精算して、罫線ごと全員に配る
+    func handRecorded(_ shoe: Shoe) {
+        let hands = shoe.hands
+        guard role == .host, var t = table, let hand = hands.last else { return }
+        t.settle(hand, handNumber: hands.count, shoeID: shoe.id, by: myID)
+        t.hands = hands
+        table = t
+        commit()
+    }
+
+    /// 親が「1つ戻す」をしたら、その手の精算を取り消す（ベットは精算前に戻る）
+    func handUndone(_ shoe: Shoe) {
+        let hands = shoe.hands
+        guard role == .host, var t = table else { return }
+        t.undoRound(handNumber: hands.count + 1, shoeID: shoe.id)
+        t.hands = hands
+        table = t
+        commit()
+    }
+
+    /// 新しいシューや、テーブルを作った直後に罫線をそろえる
+    func syncHands(_ hands: [Hand]) {
+        guard role == .host, var t = table, t.hands != hands else { return }
+        t.hands = hands
+        table = t
+        commit()
+    }
+
     var isMember: Bool { table?.member(myID) != nil }
 
     var displayName: String {
@@ -204,6 +250,7 @@ final class ChipStore: NSObject {
     private enum Message: Codable {
         case join(id: UUID, name: String)
         case move(ChipMove)
+        case bet(member: UUID, spots: [BetSpot: Int])
         case state(ChipTable)
         case rejected(String)
         case closed
@@ -281,6 +328,17 @@ final class ChipStore: NSObject {
                 send(.rejected(problem), to: [peer])
             } else {
                 t.apply(move)
+                table = t
+                commit()
+            }
+        case (.host, .bet(let member, let spots)):
+            guard var t = table, let id = members[peer] else { return }
+            if member != id {
+                send(.rejected("ほかの人のベットは親の端末からしか入れられません。"), to: [peer])
+            } else if let problem = t.problem(withBet: spots, for: id) {
+                send(.rejected(problem), to: [peer])
+            } else {
+                t.setBet(spots, for: id)
                 table = t
                 commit()
             }
