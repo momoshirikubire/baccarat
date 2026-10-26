@@ -87,33 +87,27 @@ struct TipJarView: View {
 /// 応援画面のいちばん上に出す、作っている人からのひとこと
 struct DeveloperNote: View {
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
                 Image("DeveloperIcon")
                     .resizable()
                     .scaledToFill()
-                    .frame(width: 56, height: 56)
+                    .frame(width: 44, height: 44)
                     .clipShape(Circle())
                     .overlay(Circle().stroke(Theme.line))
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("ひとりで作っています").font(.headline)
-                    Text("作った人：桃尻くびれちゃん").font(.caption).foregroundStyle(.secondary)
+                    Text("桃尻くびれちゃんが、ひとりで作っています").font(.subheadline.bold())
+                    // SNS のプロフィールだけにつなぐ（投げ銭などアプリの外での支払いには案内しない）
+                    Link("Instagram @momoshiri_kubire", destination: URL(string: "https://www.instagram.com/momoshiri_kubire/")!)
+                        .font(.caption)
                 }
             }
-            Text("はじめまして、バカラノートを作っている桃尻くびれちゃんです。ふだんは筋トレの発信をしながら、ひとりでアプリを作っています。もともとは、自分がテーブルで使いたくて作りました。")
-            Text("App Store に出すための年間の登録料やテスト用の端末は、ぜんぶ自費です。画面をすっきり使ってほしいので、広告は入れていません。気に入ってもらえたら、応援してもらえるとすごくうれしいです。")
-            // SNS のプロフィールだけにつなぐ（投げ銭などアプリの外での支払いには案内しない）
-            Link(destination: URL(string: "https://www.instagram.com/momoshiri_kubire/")!) {
-                Label("Instagram で見る（@momoshiri_kubire）", systemImage: "camera")
-                    .font(.subheadline.bold())
-            }
-            Text("チップを送らなくても、すべての機能を使えます。チップを送っても機能は変わりません。")
+            Text("登録料も端末も自費で、広告なしで続けています。気に入ったら応援してもらえるとうれしいです。チップを送らなくても、すべての機能を使えます。")
                 .font(.caption)
                 .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
-        .font(.subheadline)
-        .fixedSize(horizontal: false, vertical: true)
     }
 }
 
