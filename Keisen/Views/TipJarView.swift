@@ -116,10 +116,6 @@ struct DeveloperNote: View {
                           url: "https://www.tiktok.com/@momoshiri_kubire",
                           color: .black)
             }
-            Text("どちらも @momoshiri_kubire")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity)
         }
     }
 
