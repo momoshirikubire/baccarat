@@ -53,8 +53,10 @@ struct RoadGameView: View {
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
-                        Picker("大路のタイの印", selection: $tieStyle) {
-                            ForEach(TieStyle.allCases) { Text($0.title).tag($0) }
+                        Section("大路のタイの印") {
+                            Picker("大路のタイの印", selection: $tieStyle) {
+                                ForEach(TieStyle.allCases) { Text($0.title).tag($0) }
+                            }
                         }
                         Toggle("珠盤路・下三路・問路も見る", isOn: $showAllRoads)
                     } label: {
