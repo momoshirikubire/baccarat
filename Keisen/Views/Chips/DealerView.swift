@@ -506,12 +506,19 @@ private struct DealerTableView: View {
     private func band(_ table: ChipTable) -> some View {
         let last = table.lastRound
         return HStack(spacing: 8) {
-            VStack(alignment: .leading, spacing: 2) {
-                if chips.isOpen {
-                    Text("参加番号").font(.system(size: 9)).opacity(0.7)
-                    Text(chips.code).font(.title3.bold().monospacedDigit())
-                    Text("\(chips.connectedCount) 台つながっている").font(.system(size: 9)).opacity(0.7)
-                    BetStatusPill(closed: table.betsClosed).padding(.top, 2)
+            // 縦に高くならないように、横に2列で並べる（高いとツールバーの下にもぐる）
+            HStack(alignment: .top, spacing: 10) {
+                VStack(alignment: .leading, spacing: 2) {
+                    if chips.isOpen {
+                        Text("参加番号").font(.system(size: 9)).opacity(0.7)
+                        Text(chips.code).font(.title3.bold().monospacedDigit())
+                        Text("\(chips.connectedCount) 台つながっている").font(.system(size: 9)).opacity(0.7)
+                    } else {
+                        Text("近くの人は\n参加できません").font(.caption2).opacity(0.7)
+                    }
+                }
+                VStack(alignment: .leading, spacing: 3) {
+                    BetStatusPill(closed: table.betsClosed)
                     Text("場 \(table.bankNet == 0 ? "±0" : signed(table.bankNet)) pt")
                         .font(.caption2.bold().monospacedDigit())
                         .foregroundStyle(table.bankNet > 0 ? Color(light: 0x6FD9A8, dark: 0x6FD9A8)
@@ -519,11 +526,9 @@ private struct DealerTableView: View {
                     if let limits = table.limitText {
                         Text(limits).font(.system(size: 9)).opacity(0.7)
                     }
-                } else {
-                    Text("近くの人は\n参加できません").font(.caption2).opacity(0.7)
                 }
             }
-            .frame(width: 92, alignment: .leading)
+            .fixedSize()
             if let last {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("第\(last.handNumber)手").font(.caption2.bold())
@@ -570,7 +575,8 @@ private struct DealerTableView: View {
         }
         .foregroundStyle(Theme.deckInk)
         .padding(.horizontal, 12)
-        .padding(.vertical, 6)
+        .padding(.top, 10)
+        .padding(.bottom, 6)
         .background(Theme.deck)
         .animation(.easeOut(duration: 0.2), value: last?.id)
         .sensoryFeedback(.success, trigger: last?.id)
