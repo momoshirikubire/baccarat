@@ -171,6 +171,7 @@ private struct DealerTableView: View {
                         Picker("大路のタイの印", selection: $tieStyle) {
                             ForEach(TieStyle.allCases) { Text($0.title).tag($0) }
                         }
+                        .pickerStyle(.menu)
                         Toggle("珠盤路・下三路・問路も見る", isOn: $showAllRoads)
                         Toggle("結果を英語で読み上げる", isOn: $speakResults)
                     } label: {
