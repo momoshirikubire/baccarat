@@ -18,6 +18,30 @@ struct SummaryView: View {
                     LabeledContent("手の数", value: "\(summary.hands) 手")
                 }
 
+                // 場（親）の収支は、プレイヤーの行とは分けていちばん上に出す
+                if let bank = summary.bankNet {
+                    Section {
+                        HStack(spacing: 12) {
+                            Image(systemName: "building.columns.fill")
+                                .font(.title3)
+                                .foregroundStyle(Theme.muted)
+                                .frame(width: 24)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("場（親）").font(.headline)
+                                Text("精算で受け取った分 − 払った分（持ち点の配布と追加は除く）")
+                                    .font(.caption)
+                                    .foregroundStyle(Theme.muted)
+                            }
+                            Spacer()
+                            Text(bank == 0 ? "±0 pt" : "\(signed(bank)) pt")
+                                .font(.title3.bold().monospacedDigit())
+                                .foregroundStyle(bank > 0 ? Theme.tie : bank < 0 ? Theme.banker : Theme.ink)
+                        }
+                        .padding(.vertical, 4)
+                        .listRowBackground(Theme.background)
+                    }
+                }
+
                 Section {
                     if summary.rows.isEmpty {
                         Text("参加者はいませんでした。").foregroundStyle(.secondary)

@@ -57,6 +57,7 @@ extension ChipTable {
                 round.moveIDs.append(move.id)
             }
             round.results.append(ChipResult(member: m.id, name: m.name, staked: staked, net: net))
+            bankNet -= net
             stats[m.id, default: ChipStats(dealt: startingChips)].betHands += 1
             if net > 0 { stats[m.id, default: ChipStats(dealt: startingChips)].wins += 1 }
         }
@@ -93,6 +94,7 @@ extension ChipTable {
             }
         }
         for r in round.results {
+            bankNet += r.net
             stats[r.member]?.betHands -= 1
             if r.net > 0 { stats[r.member]?.wins -= 1 }
         }

@@ -27,6 +27,8 @@ struct ChipTable: Codable, Hashable {
     var rebuyRequests: Set<UUID> = []
     /// ベットの締め切り（true のあいだはベットを入れられない）。精算すると次の手の受付に戻る。
     var betsClosed = false
+    /// 場（親）の収支：精算で場が受け取った pt − 払った pt（持ち点の配布と追加は含めない）
+    var bankNet = 0
 
     init(name: String, startingChips: Int, bankerCommission: Bool = false, minBet: Int = 0, maxBet: Int = 0) {
         self.name = name
@@ -38,7 +40,7 @@ struct ChipTable: Codable, Hashable {
 
     private enum CodingKeys: String, CodingKey {
         case name, startingChips, members, moves, bets, bankerCommission, minBet, maxBet, hands, rounds
-        case stats, settledHands, createdAt, rebuyRequests, betsClosed
+        case stats, settledHands, createdAt, rebuyRequests, betsClosed, bankNet
     }
 
     // 前に保存したテーブルも読めるように、足りない項目は既定の値にする（ポットがあった頃の pot は読み捨てる）
@@ -59,6 +61,8 @@ struct ChipTable: Codable, Hashable {
         createdAt = try c.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
         rebuyRequests = try c.decodeIfPresent(Set<UUID>.self, forKey: .rebuyRequests) ?? []
         betsClosed = try c.decodeIfPresent(Bool.self, forKey: .betsClosed) ?? false
+        // 場の収支がなかった頃のデータは、プレイヤー全員の通算の増減から出す
+        bankNet = try c.decodeIfPresent(Int.self, forKey: .bankNet) ?? -memberNetTotal
     }
 
     func member(_ id: UUID) -> ChipMember? {
@@ -144,6 +148,11 @@ struct ChipTable: Codable, Hashable {
         members.removeAll { $0.id == id }
     }
 
+    /// プレイヤー全員の通算の増減（残高 − もらった合計）の合計
+    var memberNetTotal: Int {
+        members.reduce(0) { $0 + $1.balance - (stats[$1.id]?.dealt ?? startingChips) }
+    }
+
     /// 追加（リバイ）：場からその人に pt を足す。もらった合計に入り、お願いの印は消える。
     mutating func rebuy(_ id: UUID, amount: Int, by: UUID) {
         guard amount > 0, member(id) != nil else { return }
@@ -161,6 +170,7 @@ struct ChipTable: Codable, Hashable {
         bets = [:]
         rounds = []
         stats = [:]
+        bankNet = 0
         rebuyRequests = []
         settledHands = 0
         createdAt = Date()
@@ -205,6 +215,8 @@ struct ChipSummary: Codable, Hashable, Identifiable {
     var hands: Int
     /// 増減の大きい順
     var rows: [Row]
+    /// 場（親）の収支。前に残した結果にはない。
+    var bankNet: Int? = nil
 
     struct Row: Codable, Hashable, Identifiable {
         var id: UUID
@@ -255,7 +267,8 @@ extension ChipTable {
                                    wins: s.wins, betHands: s.betHands, rebuys: s.rebuys, rebuyTotal: s.rebuyTotal)
         }
         .sorted { $0.net != $1.net ? $0.net > $1.net : $0.balance > $1.balance }
-        return ChipSummary(tableName: name, startedAt: createdAt, endedAt: endedAt, hands: settledHands, rows: rows)
+        return ChipSummary(tableName: name, startedAt: createdAt, endedAt: endedAt, hands: settledHands, rows: rows,
+                           bankNet: bankNet)
     }
 }
 

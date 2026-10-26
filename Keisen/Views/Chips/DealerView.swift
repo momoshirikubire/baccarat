@@ -333,6 +333,10 @@ private struct DealerTableView: View {
                     Text(chips.code).font(.title3.bold().monospacedDigit())
                     Text("\(chips.connectedCount) 台つながっている").font(.system(size: 9)).opacity(0.7)
                     BetStatusPill(closed: table.betsClosed).padding(.top, 2)
+                    Text("場 \(table.bankNet == 0 ? "±0" : signed(table.bankNet)) pt")
+                        .font(.caption2.bold().monospacedDigit())
+                        .foregroundStyle(table.bankNet > 0 ? Color(light: 0x6FD9A8, dark: 0x6FD9A8)
+                                         : table.bankNet < 0 ? Color(light: 0xFF8A96, dark: 0xFF8A96) : Theme.deckInk)
                     if let limits = table.limitText {
                         Text(limits).font(.system(size: 9)).opacity(0.7)
                     }
