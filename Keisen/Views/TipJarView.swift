@@ -131,6 +131,38 @@ struct DeveloperNote: View {
     }
 }
 
+/// 応援のお願い。新しいシューを始めたときとテーブルを終えたときを数えて、2回ごとに出す（使い方に関係なく同じ数を使う）。
+/// 「あとで」の1タップで閉じる。応援してくれた人には、最後のチップから1年たつまで出さない。
+struct TipNudge: ViewModifier {
+    /// 数える出来事が起きるたびに 1 ずつ増やす
+    let trigger: Int
+    @Environment(TipStore.self) private var tips
+    @AppStorage("newShoeCount") private var count = 0
+    @State private var showNudge = false
+    @State private var showTips = false
+
+    func body(content: Content) -> some View {
+        content
+            .onChange(of: trigger) {
+                count += 1
+                guard count % 2 == 0, !tips.tippedWithinYear else { return }
+                // 確認のダイアログや結果の画面が閉じきってから出す
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { showNudge = true }
+            }
+            .alert("バカラノートを応援しませんか？", isPresented: $showNudge) {
+                Button("応援する") { showTips = true }
+                Button("あとで", role: .cancel) {}
+            } message: {
+                Text("広告なしで使い続けられるように、よければチップで応援してください。チップを送っても機能は変わりません。")
+            }
+            .sheet(isPresented: $showTips) { TipJarView() }
+    }
+}
+
+extension View {
+    func tipNudge(trigger: Int) -> some View { modifier(TipNudge(trigger: trigger)) }
+}
+
 /// どの画面の右上にも置く「応援する」ボタン
 struct TipButton: ViewModifier {
     @State private var showTips = false

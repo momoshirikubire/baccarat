@@ -28,6 +28,8 @@ struct RootView: View {
     let shoe: ShoeStore
     let chips: ChipStore
     @AppStorage("appMode") private var mode: AppMode = .choose
+    /// テーブルを終えた・抜けた回数（応援のお願いを出すきっかけ）
+    @State private var nudgeTrigger = 0
 
     var body: some View {
         content
@@ -36,8 +38,10 @@ struct RootView: View {
                 SummaryView(summary: summary, myID: chips.myID) {
                     chips.summary = nil
                     mode = .choose
+                    nudgeTrigger += 1
                 }
             }
+            .tipNudge(trigger: nudgeTrigger)
     }
 
     @ViewBuilder private var content: some View {

@@ -267,6 +267,8 @@ private struct DealerTableView: View {
     @State private var showManage = false
     @State private var showHistory = false
     @State private var confirmNewShoe = false
+    /// 新しいシューを始めた回数（応援のお願いを出すきっかけ）
+    @State private var nudgeTrigger = 0
     @AppStorage("roads.showAll") private var showAllRoads = false
     @AppStorage("tieStyle") private var tieStyle: TieStyle = .dot
     @AppStorage("speakResults") private var speakResults = true
@@ -460,11 +462,13 @@ private struct DealerTableView: View {
                 bankerPair = false
                 playerPair = false
                 chips.syncHands(sharedHands)
+                nudgeTrigger += 1
             }
             Button("キャンセル", role: .cancel) {}
         } message: {
             Text("いまのシューは「過去のシュー」に残ります。チップの残高はそのままです。")
         }
+        .tipNudge(trigger: nudgeTrigger)
     }
 
     /// 記録係が自分でもベットするときの列。勝敗のボタンと取り違えないように、明るい背景と見出しで分ける。

@@ -19,7 +19,7 @@
 - 画面は横向きだけ（pbxproj の UISupportedInterfaceOrientations_iPhone）。横向き（verticalSizeClass が compact）では、大路のマスを画面の高さに収まる大きさにして入力盤を右端に置く。縦向きのレイアウトのコードも残してある。
 - バカラ画面は大路だけが基本（大きめのマス）。「珠盤路・下三路・問路も見る」で残りの罫線と入力盤の問路を出す（`@AppStorage("roads.showAll")`。2026-10-26 にキー名を変えて、試していた端末も大路だけに戻した）。横向きで大路だけのときは、集計（`MiniStats`）を右の細い列（幅200）に移し、BANKER・PLAYER・TIE のボタンを縦に並べて、大路のマスを大きくする。過去のシューは全部出す。
 - 大路のタイの印は右上の「表示」で「まる」（はじめ）か「斜線」を選ぶ（`@AppStorage("tieStyle")`、`TieStyle`）。2回以上は回数を添える。
-- 応援のお願い：「新しいシュー」を2回始めるごとにアラートを出す（「あとで」で閉じる。最後のチップから1年以内の人には出さない。`RoadGameView.maybeNudge`・`TipStore.tippedWithinYear`）。
+- 応援のお願い：使い方に関係なく、「新しいシュー」を始めたときとテーブルを終えた・抜けたときを同じ数（`@AppStorage("newShoeCount")`）で数え、2回ごとにアラートを出す（「あとで」で閉じる。最後のチップから1年以内の人には出さない。`TipJarView.swift` の `TipNudge`・`.tipNudge(trigger:)`、`TipStore.tippedWithinYear`）。
 - 右上のボタンはアイコンだけにせず文字つき（履歴・表示・新しいシュー・応援）。
 - 左上の「ルール」（`Views/RulesView.swift`）：「3枚目の判定」（カードを選ぶと PLAYER / BANKER が3枚目を引くかと勝ち負けを出す。計算は `Models/ThirdCard.swift`）と、ルールのまとめ。
 - 結果の呼び名は英字（BANKER / PLAYER / TIE、ペアは B PAIR / P PAIR）。

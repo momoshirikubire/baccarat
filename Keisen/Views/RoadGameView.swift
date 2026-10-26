@@ -9,12 +9,11 @@ struct RoadGameView: View {
     @State private var playerPair = false
     @State private var confirmNewShoe = false
     @State private var showHistory = false
-    @State private var showNudge = false
     @State private var showTips = false
     @State private var showRules = false
-    @Environment(TipStore.self) private var tips
     /// 「新しいシュー」を押した回数（応援のお願いを出す間かくに使う）
-    @AppStorage("newShoeCount") private var newShoeCount = 0
+    /// 新しいシューを始めた回数（応援のお願いを出すきっかけ）
+    @State private var nudgeTrigger = 0
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     /// 珠盤路・下三路・問路も出すか（はじめは大路だけ）
     @AppStorage("roads.showAll") private var showAllRoads = false
@@ -99,7 +98,7 @@ struct RoadGameView: View {
             .confirmationDialog("新しいシューを始めますか？", isPresented: $confirmNewShoe, titleVisibility: .visible) {
                 Button("新しいシューを始める") {
                     store.startNewShoe()
-                    maybeNudge()
+                    nudgeTrigger += 1
                     bankerPair = false
                     playerPair = false
                 }
@@ -110,25 +109,11 @@ struct RoadGameView: View {
                      : "いまのシューは「過去のシュー」に残ります。")
             }
             .sheet(isPresented: $showHistory) { HistoryView(store: store) }
-            .alert("バカラノートを応援しませんか？", isPresented: $showNudge) {
-                Button("応援する") { showTips = true }
-                Button("あとで", role: .cancel) {}
-            } message: {
-                Text("広告なしで使い続けられるように、よければチップで応援してください。チップを送っても機能は変わりません。")
-            }
+            .tipNudge(trigger: nudgeTrigger)
             .sheet(isPresented: $showTips) { TipJarView() }
             .sheet(isPresented: $showRules) { RulesView() }
         }
         .resultSplash($announcement)
-    }
-
-    /// 新しいシューを2回始めるごとに、応援のお願いを出す（「あとで」の1タップで閉じる）。
-    /// 応援してくれた人には、最後のチップから1年たつまで出さない。
-    private func maybeNudge() {
-        newShoeCount += 1
-        guard newShoeCount % 2 == 0, !tips.tippedWithinYear else { return }
-        // 確認のダイアログが閉じきってから出す
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { showNudge = true }
     }
 
     /// compact：横向きで大路だけのとき。集計と「も見る」ボタンは右の列と「表示」に任せて、大路だけを置く
