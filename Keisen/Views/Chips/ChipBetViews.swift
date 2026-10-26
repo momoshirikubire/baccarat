@@ -1,3 +1,4 @@
+import AVFoundation
 import SwiftUI
 
 // バカラ×チップの画面（親・プレイヤー）で使う部品
@@ -155,7 +156,7 @@ struct BetSheet: View {
                 }
                 BetPad(spots: spots, balance: member.balance, commission: table.bankerCommission,
                        previous: table.lastRound?.bets[member.id],
-                       minBet: table.minBet, maxBet: table.maxBet) { spots = $0 }
+                       minBet: table.minBet, maxBet: table.maxBet, closed: table.betsClosed) { spots = $0 }
                     .padding(16)
                     .background(Theme.deck, in: RoundedRectangle(cornerRadius: 16))
                     .padding(.horizontal, 16)
@@ -175,6 +176,7 @@ struct BetSheet: View {
                         onSave(spots)
                         dismiss()
                     }
+                    .disabled(table.betsClosed)
                 }
             }
         }
@@ -194,6 +196,8 @@ struct BetPad: View {
     var maxBet = 0
     /// 記録係の画面の横に並べるときは、ボタンを低くする
     var compact = false
+    /// 締め切り中は押せなくする
+    var closed = false
     let onChange: ([BetSpot: Int]) -> Void
     @State private var selected: BetSpot = .banker
 
@@ -207,6 +211,13 @@ struct BetPad: View {
                     .font(.caption2)
                     .opacity(0.75)
                     .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            if closed {
+                Label("締め切り中。勝敗が出ると次の手の受付が始まります", systemImage: "lock.fill")
+                    .font(.caption.bold())
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity, minHeight: 26)
+                    .background(Theme.banker, in: RoundedRectangle(cornerRadius: 8))
             }
             HStack(spacing: 6) {
                 figure("残高", balance)
@@ -239,6 +250,7 @@ struct BetPad: View {
             }
         }
         .foregroundStyle(Theme.deckInk)
+        .disabled(closed)
     }
 
     private func figure(_ title: String, _ value: Int) -> some View {
@@ -307,6 +319,66 @@ struct BetPad: View {
         case .banker, .bankerPair: Theme.banker
         case .player, .playerPair: Theme.player
         case .tie: Theme.tie
+        }
+    }
+}
+
+// MARK: - ベットの締め切り
+
+/// 「受付中」「締め切り」の札
+struct BetStatusPill: View {
+    let closed: Bool
+
+    var body: some View {
+        Label(closed ? "締め切り" : "受付中", systemImage: closed ? "lock.fill" : "circle.fill")
+            .font(.caption.bold())
+            .foregroundStyle(closed ? .white : .black)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3)
+            .background(closed ? Theme.banker : Theme.warning, in: Capsule())
+            .accessibilityLabel(closed ? "ベットは締め切り" : "ベットを受け付け中")
+    }
+}
+
+/// 締め切ったときに短く大きく出す「NO MORE BETS」と、英語の読み上げ
+struct NoMoreBets {
+    private static let synthesizer = AVSpeechSynthesizer()
+
+    static func speak() {
+        // 結果の読み上げと同じく、ほかの音を止めず消音スイッチに従う
+        try? AVAudioSession.sharedInstance().setCategory(.ambient, mode: .default, options: [.mixWithOthers])
+        let utterance = AVSpeechUtterance(string: "No more bets")
+        utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
+        if synthesizer.isSpeaking { synthesizer.stopSpeaking(at: .immediate) }
+        synthesizer.speak(utterance)
+    }
+}
+
+extension View {
+    /// 1.5秒だけ「NO MORE BETS」を出す。タップでもすぐ消える。
+    func noMoreBetsBanner(_ isShown: Binding<Bool>) -> some View {
+        overlay {
+            if isShown.wrappedValue {
+                ZStack {
+                    Color.black.opacity(0.82).ignoresSafeArea()
+                    VStack(spacing: 6) {
+                        Text("NO MORE BETS")
+                            .font(.system(size: 72, weight: .black))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.4)
+                        Text("ベットは締め切りました").font(.headline).opacity(0.8)
+                    }
+                    .foregroundStyle(.white)
+                    .padding(24)
+                }
+                .contentShape(Rectangle())
+                .onTapGesture { withAnimation(.easeOut(duration: 0.2)) { isShown.wrappedValue = false } }
+                .task {
+                    try? await Task.sleep(for: .seconds(1.5))
+                    withAnimation(.easeOut(duration: 0.3)) { isShown.wrappedValue = false }
+                }
+                .transition(.opacity)
+            }
         }
     }
 }

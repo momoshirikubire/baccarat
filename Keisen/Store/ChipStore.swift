@@ -242,6 +242,14 @@ final class ChipStore: NSObject {
         }
     }
 
+    /// 親：ベットを締め切る（勝敗を記録して精算すると、次の手の受付に戻る）
+    func closeBets() {
+        guard role == .host, var t = table, !t.betsClosed else { return }
+        t.betsClosed = true
+        table = t
+        commit()
+    }
+
     /// 親：追加（リバイ）。場からその人に pt を足す。
     func rebuy(_ id: UUID, amount: Int) {
         guard role == .host, var t = table, amount > 0 else { return }

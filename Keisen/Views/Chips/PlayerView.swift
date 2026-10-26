@@ -99,6 +99,7 @@ private struct PlayerTableView: View {
     @State private var shownUntil = Date.distantPast
     @State private var showManage = false
     @State private var showRules = false
+    @State private var showNoMoreBets = false
     @AppStorage("roads.showAll") private var showAllRoads = false
     @AppStorage("tieStyle") private var tieStyle: TieStyle = .dot
     @AppStorage("speakResults") private var speakResults = true
@@ -108,12 +109,12 @@ private struct PlayerTableView: View {
         let me = table?.member(chips.myID)
         let balance = me?.balance ?? 0
         NavigationStack {
-            VStack(spacing: 0) {
-                if let table { membersBand(table) }
-                HStack(spacing: 0) {
+            HStack(spacing: 0) {
                     GeometryReader { geo in
                         RoadBoardColumn(hands: table?.hands ?? [], height: geo.size.height, showAll: $showAllRoads)
                     }
+                    // 高さが足りないときも上の帯を押し上げないように、右の列はスクロールできるようにして下に寄せる
+                    ScrollView {
                     VStack(spacing: 8) {
                         if let table, needsRebuy(table, balance: balance) {
                             rebuyRequestButton(table)
@@ -122,7 +123,8 @@ private struct PlayerTableView: View {
                                previous: table?.lastRound?.bets[chips.myID],
                                minBet: table?.minBet ?? 0, maxBet: table?.maxBet ?? 0,
                                // お願いのボタンが出ているあいだは、高さに収まるようにボタンを低くする
-                               compact: table.map { needsRebuy($0, balance: balance) } ?? false) { spots in
+                               compact: table.map { needsRebuy($0, balance: balance) } ?? false,
+                               closed: table?.betsClosed ?? false) { spots in
                             draft = spots
                             chips.placeBet(spots, for: chips.myID)
                         }
@@ -134,10 +136,16 @@ private struct PlayerTableView: View {
                     .foregroundStyle(Theme.deckInk)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
+                    }
+                    .defaultScrollAnchor(.bottom)
+                    .scrollBounceBehavior(.basedOnSize)
                     .frame(width: 340)
-                    .frame(maxHeight: .infinity, alignment: .bottom)
+                    .frame(maxHeight: .infinity)
                     .background(Theme.deck.ignoresSafeArea())
-                }
+            }
+            // 参加者の帯はツールバーのすぐ下に固定する（中身が高くなっても重ならない）
+            .safeAreaInset(edge: .top, spacing: 0) {
+                if let table { membersBand(table) }
             }
             .background(Theme.background)
             .navigationTitle("")
@@ -173,6 +181,14 @@ private struct PlayerTableView: View {
             .tipButton()
         }
         .resultSplash($announcement)
+        .noMoreBetsBanner($showNoMoreBets)
+        // 親が締め切ったら、大きく出して読み上げる
+        .onChange(of: table?.betsClosed ?? false) { _, closed in
+            // 親が「1つ戻す」で前の手に戻したとき（締め切りに戻る）は出さない
+            guard closed, (chips.table?.lastRound?.date ?? .distantPast) >= shownUntil else { return }
+            withAnimation(.easeOut(duration: 0.15)) { showNoMoreBets = true }
+            if speakResults { NoMoreBets.speak() }
+        }
         .sheet(isPresented: $showManage) { ChipManageSheet(store: chips) }
         .sheet(isPresented: $showRules) { RulesView() }
         .onAppear {
@@ -218,6 +234,7 @@ private struct PlayerTableView: View {
         let members = table.members.filter { $0.id == chips.myID } + table.members.filter { $0.id != chips.myID }
         return ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 6) {
+                BetStatusPill(closed: table.betsClosed)
                 ForEach(members) { m in
                     MemberBetCard(member: m, table: table, isMe: m.id == chips.myID,
                                   lastNet: last?.results.first { $0.member == m.id }?.net)

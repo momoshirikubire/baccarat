@@ -112,12 +112,38 @@ private struct DealerTableView: View {
     @AppStorage("speakResults") private var speakResults = true
     @State private var announcement: ResultAnnouncement?
     @State private var showRules = false
+    @State private var showNoMoreBets = false
     @State private var rebuyTarget: ChipMember?
     @State private var rebuyAmount: Int?
 
     private func startRebuy(_ m: ChipMember) {
         rebuyAmount = chips.table?.startingChips ?? 1000
         rebuyTarget = m
+    }
+
+    /// ベットの受付と締め切り。受付中は大きな「締め切る」、締め切り中はそのことを出す（勝敗で次の手の受付に戻る）。
+    @ViewBuilder private var closeBar: some View {
+        let closed = chips.table?.betsClosed ?? false
+        if closed {
+            HStack(spacing: 6) {
+                BetStatusPill(closed: true)
+                Text("勝敗を押すと次の手の受付").font(.caption2).foregroundStyle(Theme.deckInk.opacity(0.7))
+                Spacer(minLength: 0)
+            }
+        } else {
+            Button {
+                chips.closeBets()
+                withAnimation(.easeOut(duration: 0.15)) { showNoMoreBets = true }
+                if speakResults { NoMoreBets.speak() }
+            } label: {
+                Label("締め切る（NO MORE BETS）", systemImage: "lock.fill")
+                    .font(.subheadline.bold())
+                    .foregroundStyle(.black)
+                    .frame(maxWidth: .infinity, minHeight: 40)
+                    .background(Theme.warning, in: RoundedRectangle(cornerRadius: 10))
+            }
+            .buttonStyle(PressStyle())
+        }
     }
 
     /// 記録係も自分でベットしているか
@@ -128,8 +154,6 @@ private struct DealerTableView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                if let table = chips.table { band(table) }
                 HStack(spacing: 0) {
                     GeometryReader { geo in
                         // 上に参加者の帯があって高さが足りないので、罫線画面のような細い入力盤にはしない
@@ -140,6 +164,9 @@ private struct DealerTableView: View {
                         myBetColumn(table, me)
                     }
                     VStack(spacing: 0) {
+                        closeBar
+                            .padding(.horizontal, 12)
+                            .padding(.top, 8)
                         Text("勝敗を記録")
                             .font(.caption.bold())
                             .foregroundStyle(Theme.deckInk.opacity(0.7))
@@ -179,6 +206,10 @@ private struct DealerTableView: View {
                     .frame(maxHeight: .infinity, alignment: .bottom)
                     .background(Theme.deck.ignoresSafeArea())
                 }
+                .clipped()
+            // 参加者の帯はツールバーのすぐ下に固定する（中身が高くなっても重ならない）
+            .safeAreaInset(edge: .top, spacing: 0) {
+                if let table = chips.table { band(table) }
             }
             .background(Theme.background)
             .navigationTitle("")
@@ -228,6 +259,7 @@ private struct DealerTableView: View {
             .tipButton()
         }
         .resultSplash($announcement)
+        .noMoreBetsBanner($showNoMoreBets)
         .onAppear {
             chips.syncHands(sharedHands)
             // アプリを開き直したときも、近くのプレイヤーが参加し直せるようにする
@@ -281,7 +313,7 @@ private struct DealerTableView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             BetPad(spots: table.bets[me.id] ?? [:], balance: me.balance, commission: table.bankerCommission,
                    previous: table.lastRound?.bets[me.id],
-                   minBet: table.minBet, maxBet: table.maxBet, compact: true) { spots in
+                   minBet: table.minBet, maxBet: table.maxBet, compact: true, closed: table.betsClosed) { spots in
                 chips.placeBet(spots, for: me.id)
             }
         }
@@ -301,6 +333,7 @@ private struct DealerTableView: View {
                     Text("参加番号").font(.system(size: 9)).opacity(0.7)
                     Text(chips.code).font(.title3.bold().monospacedDigit())
                     Text("\(chips.connectedCount) 台つながっている").font(.system(size: 9)).opacity(0.7)
+                    BetStatusPill(closed: table.betsClosed).padding(.top, 2)
                     if let limits = table.limitText {
                         Text(limits).font(.system(size: 9)).opacity(0.7)
                     }

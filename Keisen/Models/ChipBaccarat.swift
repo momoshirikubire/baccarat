@@ -6,6 +6,7 @@ extension ChipTable {
     /// ベットを入れられるかどうか。だめなときは理由を返す。ベットは入れ直すので、残高まで入れられる。
     func problem(withBet spots: [BetSpot: Int], for id: UUID) -> String? {
         guard let m = member(id) else { return "参加者が見つかりません。" }
+        if betsClosed { return "ベットは締め切りました。次の手の受付を待ってください。" }
         if spots.values.contains(where: { $0 < 0 }) { return "0 pt 以上を入れてください。" }
         if let problem = limitProblem(spots) { return problem }
         let total = spots.values.reduce(0, +)
@@ -69,6 +70,8 @@ extension ChipTable {
             bets = [:]
         }
         settledHands += 1
+        // 精算したら、次の手のベットの受付を始める
+        betsClosed = false
         rounds.append(round)
         if rounds.count > 100 { rounds.removeFirst(rounds.count - 100) }
     }
@@ -94,6 +97,8 @@ extension ChipTable {
             if r.net > 0 { stats[r.member]?.wins -= 1 }
         }
         settledHands = max(0, settledHands - 1)
+        // 取り消した手は、締め切ったところに戻す
+        betsClosed = true
         bets = round.bets.filter { member($0.key) != nil }
         return true
     }

@@ -25,6 +25,8 @@ struct ChipTable: Codable, Hashable {
     var createdAt = Date()
     /// 「親に追加をお願いする」を押した参加者
     var rebuyRequests: Set<UUID> = []
+    /// ベットの締め切り（true のあいだはベットを入れられない）。精算すると次の手の受付に戻る。
+    var betsClosed = false
 
     init(name: String, startingChips: Int, bankerCommission: Bool = false, minBet: Int = 0, maxBet: Int = 0) {
         self.name = name
@@ -36,7 +38,7 @@ struct ChipTable: Codable, Hashable {
 
     private enum CodingKeys: String, CodingKey {
         case name, startingChips, members, moves, bets, bankerCommission, minBet, maxBet, hands, rounds
-        case stats, settledHands, createdAt, rebuyRequests
+        case stats, settledHands, createdAt, rebuyRequests, betsClosed
     }
 
     // 前に保存したテーブルも読めるように、足りない項目は既定の値にする（ポットがあった頃の pot は読み捨てる）
@@ -56,6 +58,7 @@ struct ChipTable: Codable, Hashable {
         settledHands = try c.decodeIfPresent(Int.self, forKey: .settledHands) ?? 0
         createdAt = try c.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
         rebuyRequests = try c.decodeIfPresent(Set<UUID>.self, forKey: .rebuyRequests) ?? []
+        betsClosed = try c.decodeIfPresent(Bool.self, forKey: .betsClosed) ?? false
     }
 
     func member(_ id: UUID) -> ChipMember? {
