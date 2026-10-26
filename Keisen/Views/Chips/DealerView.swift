@@ -22,8 +22,10 @@ struct DealerView: View {
 
 private struct DealerSetupView: View {
     @Bindable var chips: ChipStore
-    @State private var tableName = "テーブル"
+    @State private var tableName = ""
     @State private var startingChips = 1000
+    /// 持ち点を候補から選ばず、自分で入れる
+    @State private var customChips = false
     @State private var bankerCommission = false
     /// 親を置かず、記録係も自分のベットを入れる
     @State private var hostBets = false
@@ -31,58 +33,203 @@ private struct DealerSetupView: View {
     @State private var minBet: Int?
     @State private var maxBet: Int?
     @State private var limitPreset: BetLimitPreset = .normal
+    @State private var showPast = false
+    @FocusState private var focused: Bool
+
+    private static let chipChoices = [500, 1000, 5000, 10000]
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section {
-                    TextField("あなたの名前（みんなの画面に出ます）", text: $chips.myName)
-                        .textContentType(.nickname)
-                    TextField("テーブルの名前", text: $tableName)
-                    HStack {
-                        Text("はじめの持ち点")
-                        Spacer()
-                        TextField("1000", value: $startingChips, format: .number)
-                            .keyboardType(.numberPad)
-                            .multilineTextAlignment(.trailing)
-                            .frame(maxWidth: 120)
-                        Text("pt").foregroundStyle(.secondary)
+            HStack(alignment: .top, spacing: 14) {
+                // 左：入力（カードごとにまとめる）
+                ScrollView {
+                    VStack(spacing: 12) {
+                        card("名前") {
+                            field("あなた", placeholder: "みんなの画面に出る名前", text: $chips.myName)
+                            field("テーブル", placeholder: "\(defaultTableName)（空のままでよい）", text: $tableName)
+                        }
+                        card("はじめの持ち点") {
+                            HStack(spacing: 6) {
+                                ForEach(Self.chipChoices, id: \.self) { amount in
+                                    choice(amount.formatted(), selected: !customChips && startingChips == amount) {
+                                        customChips = false
+                                        startingChips = amount
+                                        focused = false
+                                    }
+                                }
+                                choice("自分で決める", selected: customChips) { customChips = true }
+                            }
+                            if customChips {
+                                HStack {
+                                    TextField("1000", value: $startingChips, format: .number)
+                                        .keyboardType(.numberPad)
+                                        .focused($focused)
+                                        .font(.title3.bold().monospacedDigit())
+                                        .padding(.horizontal, 10)
+                                        .frame(height: 40)
+                                        .background(Theme.background, in: RoundedRectangle(cornerRadius: 8))
+                                    Text("pt").foregroundStyle(Theme.muted)
+                                }
+                            }
+                        }
+                        card("ベットの範囲（1か所あたり）") {
+                            BetLimitPicker(startingChips: max(1, startingChips), preset: $limitPreset,
+                                           minBet: $minBet, maxBet: $maxBet)
+                        }
+                        card("ルール") {
+                            toggle("BANKER の手数料 5%", detail: "オンにすると BANKER の勝ちは 0.95倍", isOn: $bankerCommission)
+                            Divider()
+                            toggle("自分もプレイヤーとしてベットする", detail: "親を置かずに、みんなで遊ぶとき", isOn: $hostBets)
+                        }
+                        if !chips.pastSummaries.isEmpty {
+                            Button { showPast = true } label: {
+                                Label("これまでの結果（\(chips.pastSummaries.count)）", systemImage: "list.number")
+                                    .font(.subheadline.bold())
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            .foregroundStyle(Theme.ink)
+                            .padding(.horizontal, 4)
+                        }
                     }
-                    Toggle("BANKER の勝ちから手数料5%を引く", isOn: $bankerCommission)
-                    Toggle("自分もプレイヤーとしてベットする", isOn: $hostBets)
-                    BetLimitPicker(startingChips: startingChips, preset: $limitPreset, minBet: $minBet, maxBet: $maxBet)
-                } footer: {
-                    Text("テーブルを作った iPhone で勝敗を記録し、みんなのベットを精算します（払い戻しは「場」から）。ほかの人は自分の iPhone で「テーブルに参加する」を選び、この画面に出る4桁の番号で参加します。アプリのない人は、参加者として足して代わりにベットを入れられます。親を置かずに全員で遊ぶときは「自分もプレイヤーとしてベットする」をオンにすると、記録しながら自分もベットできます。")
+                    .padding(.vertical, 12)
                 }
-                Section {
-                    Button("テーブルを作る") {
-                        let name = tableName.trimmingCharacters(in: .whitespaces)
-                        chips.createTable(name: name.isEmpty ? "テーブル" : name, startingChips: startingChips,
-                                          hostPlays: hostBets, bankerCommission: bankerCommission,
-                                          minBet: chosenLimits.min, maxBet: chosenLimits.max)
-                        chips.setOpen(true)
+                .scrollDismissesKeyboard(.interactively)
+
+                // 右：こんなテーブルになります（要約）と、いつも見える「テーブルを作る」
+                VStack(spacing: 10) {
+                    ScrollView { summary }
+                    Button(action: create) {
+                        Label("テーブルを作る", systemImage: "plus.circle.fill")
+                            .font(.headline)
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity, minHeight: 54)
+                            .background(Theme.ink, in: RoundedRectangle(cornerRadius: 14))
                     }
-                    .bold()
-                } footer: {
-                    Text("チップは pt で数える遊び用の記録です。お金に換えたり、精算に使ったりはしないでください。")
+                    .buttonStyle(PressStyle())
                 }
-                if !chips.pastSummaries.isEmpty {
-                    Section("これまでの結果") {
-                        PastSummariesList(summaries: chips.pastSummaries)
-                    }
-                }
+                .padding(.vertical, 12)
+                .frame(width: 270)
             }
-            .scrollDismissesKeyboard(.interactively)
+            .padding(.horizontal, 16)
+            .background(Theme.background)
             .navigationTitle("テーブルを作る")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) { ModeButton(chips: chips) }
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("完了") { focused = false }
+                }
+            }
+            .sheet(isPresented: $showPast) {
+                NavigationStack {
+                    List { PastSummariesList(summaries: chips.pastSummaries) }
+                        .navigationTitle("これまでの結果")
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar {
+                            ToolbarItem(placement: .confirmationAction) { Button("閉じる") { showPast = false } }
+                        }
+                }
+            }
+        }
+    }
+
+    // MARK: 右の要約
+
+    private var summary: some View {
+        let l = chosenLimits
+        return VStack(alignment: .leading, spacing: 10) {
+            Text("こんなテーブルになります").font(.caption.bold()).foregroundStyle(Theme.deckInk.opacity(0.7))
+            Text(finalTableName).font(.title3.bold()).lineLimit(2)
+            row("持ち点", "\(max(1, startingChips).formatted()) pt")
+            row("ベットの範囲", l.min == 0 && l.max == 0 ? "なし" : "\(l.min.formatted())〜\(l.max.formatted()) pt")
+            row("BANKER", bankerCommission ? "0.95倍" : "1倍")
+            row("親のベット", hostBets ? "する" : "しない")
+            Text("作ると4桁の参加番号が出ます。pt は遊び用で、お金には換えられません。")
+                .font(.caption2)
+                .foregroundStyle(Theme.deckInk.opacity(0.6))
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .foregroundStyle(Theme.deckInk)
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.deck, in: RoundedRectangle(cornerRadius: 14))
+    }
+
+    private func row(_ title: String, _ value: String) -> some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(title).font(.subheadline).opacity(0.75)
+            Spacer()
+            Text(value).font(.headline.monospacedDigit())
+        }
+    }
+
+    // MARK: 部品
+
+    private var defaultTableName: String {
+        let me = chips.myName.trimmingCharacters(in: .whitespaces)
+        return me.isEmpty ? "テーブル" : "\(me)のテーブル"
+    }
+
+    private var finalTableName: String {
+        let name = tableName.trimmingCharacters(in: .whitespaces)
+        return name.isEmpty ? defaultTableName : name
+    }
+
+    private func create() {
+        focused = false
+        chips.createTable(name: finalTableName, startingChips: max(1, startingChips),
+                          hostPlays: hostBets, bankerCommission: bankerCommission,
+                          minBet: chosenLimits.min, maxBet: chosenLimits.max)
+        chips.setOpen(true)
+    }
+
+    private func card<Content: View>(_ title: String, @ViewBuilder _ content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title).font(.caption.bold()).foregroundStyle(Theme.muted)
+            content()
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.sheet, in: RoundedRectangle(cornerRadius: 14))
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.line))
+    }
+
+    private func field(_ title: String, placeholder: String, text: Binding<String>) -> some View {
+        HStack {
+            Text(title).font(.subheadline).frame(width: 72, alignment: .leading)
+            TextField(placeholder, text: text)
+                .focused($focused)
+                .padding(.horizontal, 10)
+                .frame(height: 38)
+                .background(Theme.background, in: RoundedRectangle(cornerRadius: 8))
+        }
+    }
+
+    private func choice(_ title: String, selected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.subheadline.bold().monospacedDigit())
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .foregroundStyle(selected ? .white : Theme.ink)
+                .frame(maxWidth: .infinity, minHeight: 40)
+                .background(selected ? Theme.ink : Theme.background, in: RoundedRectangle(cornerRadius: 10))
+        }
+        .buttonStyle(PressStyle())
+    }
+
+    private func toggle(_ title: String, detail: String, isOn: Binding<Bool>) -> some View {
+        Toggle(isOn: isOn) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).font(.subheadline.bold())
+                Text(detail).font(.caption).foregroundStyle(Theme.muted)
             }
         }
     }
 
     private var chosenLimits: (min: Int, max: Int) {
-        BetLimitPicker(startingChips: startingChips, preset: .constant(limitPreset),
+        BetLimitPicker(startingChips: max(1, startingChips), preset: .constant(limitPreset),
                        minBet: .constant(minBet), maxBet: .constant(maxBet)).limits
     }
 }

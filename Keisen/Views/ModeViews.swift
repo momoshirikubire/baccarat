@@ -68,7 +68,7 @@ struct ModePickerView: View {
                 HStack(alignment: .top, spacing: 12) {
                     card(.roadsOnly, icon: "square.grid.3x3",
                          title: "罫線だけ",
-                         role: "1人で使う",
+                         role: nil,
                          detail: "勝敗を入れて罫線を記録します。")
                     card(.dealer, icon: "person.crop.rectangle.stack",
                          title: "テーブルを作る",
@@ -90,17 +90,19 @@ struct ModePickerView: View {
         .background(Theme.background)
     }
 
-    private func card(_ mode: AppMode, icon: String, title: String, role: String, detail: String) -> some View {
+    private func card(_ mode: AppMode, icon: String, title: String, role: String?, detail: String) -> some View {
         Button { onPick(mode) } label: {
             VStack(alignment: .leading, spacing: 6) {
                 Image(systemName: icon).font(.title2)
                 Text(title)
                     .font(.headline)
                     .fixedSize(horizontal: false, vertical: true)
-                Text(role)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Theme.ink.opacity(0.8))
-                    .fixedSize(horizontal: false, vertical: true)
+                if let role {
+                    Text(role)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Theme.ink.opacity(0.8))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
                 Text(detail)
                     .font(.footnote)
                     .foregroundStyle(Theme.muted)

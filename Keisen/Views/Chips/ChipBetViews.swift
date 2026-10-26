@@ -397,10 +397,22 @@ struct BetLimitPicker: View {
     @Binding var maxBet: Int?
 
     var body: some View {
-        Picker("ベットの範囲", selection: $preset) {
-            ForEach(BetLimitPreset.allCases) { Text($0.title).tag($0) }
+        // 押しやすいように、大きめのボタンを並べる
+        HStack(spacing: 6) {
+            ForEach(BetLimitPreset.allCases) { p in
+                Button { preset = p } label: {
+                    Text(p.title)
+                        .font(.subheadline.bold())
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                        .foregroundStyle(preset == p ? .white : Theme.ink)
+                        .frame(maxWidth: .infinity, minHeight: 40)
+                        .background(preset == p ? Theme.ink : Theme.background, in: RoundedRectangle(cornerRadius: 10))
+                }
+                .buttonStyle(PressStyle())
+                .accessibilityAddTraits(preset == p ? .isSelected : [])
+            }
         }
-        .pickerStyle(.segmented)
         if preset == .custom {
             field("下限（1か所あたり）", value: $minBet)
             field("上限（1か所あたり）", value: $maxBet)
