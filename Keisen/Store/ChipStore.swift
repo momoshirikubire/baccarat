@@ -500,7 +500,7 @@ extension ChipStore: MCNearbyServiceAdvertiserDelegate {
     func advertiser(_ advertiser: MCNearbyServiceAdvertiser, didNotStartAdvertisingPeer error: Error) {
         DispatchQueue.main.async { [weak self] in
             self?.isOpen = false
-            self?.notice = "近くの人とつなげませんでした。設定の「ローカルネットワーク」で罫線ノートを許可してください。"
+            self?.notice = "近くの人とつなげませんでした。設定の「ローカルネットワーク」でバカラノートを許可してください。"
         }
     }
 }
@@ -522,7 +522,7 @@ extension ChipStore: MCNearbyServiceBrowserDelegate {
 
     func browser(_ browser: MCNearbyServiceBrowser, didNotStartBrowsingForPeers error: Error) {
         DispatchQueue.main.async { [weak self] in
-            self?.notice = "近くのテーブルを探せませんでした。設定の「ローカルネットワーク」で罫線ノートを許可してください。"
+            self?.notice = "近くのテーブルを探せませんでした。設定の「ローカルネットワーク」でバカラノートを許可してください。"
         }
     }
 }
