@@ -7,6 +7,12 @@ struct RoadGameView: View {
     @State private var playerPair = false
     @State private var confirmNewShoe = false
     @State private var showHistory = false
+    @State private var showNudge = false
+    @State private var showTips = false
+    @Environment(TipStore.self) private var tips
+    /// 「新しいシュー」を押した回数と、最後に応援のお願いを出した時刻（応援のお願いを出しすぎないため）
+    @AppStorage("newShoeCount") private var newShoeCount = 0
+    @AppStorage("lastNudgeAt") private var lastNudgeAt: Double = 0
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     /// 珠盤路・下三路・問路も出すか（はじめは大路だけ）
     @AppStorage("showAllRoads") private var showAllRoads = false
@@ -73,6 +79,7 @@ struct RoadGameView: View {
             .confirmationDialog("新しいシューを始めますか？", isPresented: $confirmNewShoe, titleVisibility: .visible) {
                 Button("新しいシューを始める") {
                     store.startNewShoe()
+                    maybeNudge()
                     bankerPair = false
                     playerPair = false
                 }
@@ -83,7 +90,26 @@ struct RoadGameView: View {
                      : "いまのシューは「過去のシュー」に残ります。")
             }
             .sheet(isPresented: $showHistory) { HistoryView(store: store) }
+            .alert("罫線ノートを応援しませんか？", isPresented: $showNudge) {
+                Button("応援する") { showTips = true }
+                Button("あとで", role: .cancel) {}
+            } message: {
+                Text("広告なしで使い続けられるように、よければチップで応援してください。チップを送っても機能は変わりません。")
+            }
+            .sheet(isPresented: $showTips) { TipJarView() }
         }
+    }
+
+    /// 新しいシューを5回始めるごとに一度だけ、応援のお願いを出す。
+    /// 応援してくれた人には出さず、出すのは多くても1週間に1回まで。
+    private func maybeNudge() {
+        newShoeCount += 1
+        let week: TimeInterval = 7 * 24 * 60 * 60
+        guard newShoeCount % 5 == 0, tips.tipCount == 0,
+              Date().timeIntervalSince1970 - lastNudgeAt > week else { return }
+        lastNudgeAt = Date().timeIntervalSince1970
+        // 確認のダイアログが閉じきってから出す
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { showNudge = true }
     }
 
     private func board(scale: CGFloat, fitCell: CGFloat? = nil) -> some View {

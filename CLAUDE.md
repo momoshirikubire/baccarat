@@ -18,6 +18,7 @@
 - 画面は横向きだけ（pbxproj の UISupportedInterfaceOrientations_iPhone）。横向き（verticalSizeClass が compact）では、大路のマスを画面の高さに収まる大きさにして入力盤を右端に置く。縦向きのレイアウトのコードも残してある。
 - バカラ画面は大路だけが基本（大きめのマス）。「珠盤路・下三路・問路も見る」で残りの罫線と入力盤の問路を出す（`@AppStorage("showAllRoads")`）。過去のシューは全部出す。
 - 大路のタイの印は右上の「表示の設定」で「まる」（はじめ）か「斜線」を選ぶ（`@AppStorage("tieStyle")`、`TieStyle`）。2回以上は回数を添える。
+- 応援のお願い：「新しいシュー」を5回始めるごとに一度アラートを出す（チップを送った人には出さない、多くても週1回。`RoadGameView.maybeNudge`）。
 - 結果の呼び名は英字（BANKER / PLAYER / TIE、ペアは B PAIR / P PAIR）。
 - `Keisen/Models/Hand.swift`：結果（B / P / T）、ペア、シュー、初回に見せる例のシュー。`RoadGame` でバカラとドラゴンタイガーの呼び名を切り替える（ドラゴン＝バンカーの位置、タイガー＝プレイヤーの位置。罫線の計算は同じ）。
 - `Keisen/Models/Roads.swift`：罫線の計算。大路（タイは直前のマスに数で付ける、6段を超えたり下が埋まっていたら右へ曲がるドラゴンテール）、下三路（大眼仔・小路・曱甴路 = 1・2・3列前と比べる）、問路（次が B / P のときに付く印）。
