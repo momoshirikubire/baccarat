@@ -30,9 +30,9 @@ App Store Connect →「ビジネス」で次の3つを済ませる。反映ま�
 
 | 参照名 | 製品ID | 価格の目安 | 表示名 | 説明 |
 | --- | --- | --- | --- | --- |
-| Tip Small | com.tadahonami.keisen.tip.small | ¥160 | ちょっと応援 | コーヒー1杯ぶんの応援 |
-| Tip Medium | com.tadahonami.keisen.tip.medium | ¥480 | しっかり応援 | ランチ1回ぶんの応援 |
-| Tip Large | com.tadahonami.keisen.tip.large | ¥980 | めっちゃ応援 | 開発をがっつり応援 |
+| Tip Small | com.tadahonami.keisen.tip.small | ¥300 | ちょっと応援 | コーヒー1杯ぶんの応援 |
+| Tip Medium | com.tadahonami.keisen.tip.medium | ¥1,000 | しっかり応援 | ランチ1回ぶんの応援 |
+| Tip Large | com.tadahonami.keisen.tip.large | ¥2,000 | めっちゃ応援 | 開発をがっつり応援 |
 | Tip Huge | com.tadahonami.keisen.tip.huge | ¥5,000 | 特大応援 | 開発をとことん応援 |
 
 - 審査用のスクリーンショットには応援画面を撮って使う。
