@@ -27,7 +27,10 @@ struct RoadGameView: View {
             Group {
                 if isLandscape {
                     HStack(spacing: 0) {
-                        board(scale: 1.35)
+                        // 大路の6段が画面の高さに収まるマスの大きさにする（集計の段・見出し・余白を引く）
+                        GeometryReader { geo in
+                            board(scale: 1.35, fitCell: max(22, min(42, (geo.size.height - 130) / CGFloat(Roads.rows))))
+                        }
                         deck(side: true)
                             .frame(width: 300)
                             .frame(maxHeight: .infinity)
@@ -82,7 +85,7 @@ struct RoadGameView: View {
         }
     }
 
-    private func board(scale: CGFloat) -> some View {
+    private func board(scale: CGFloat, fitCell: CGFloat? = nil) -> some View {
         ScrollView {
             VStack(spacing: 10) {
                 if store.isSample {
@@ -94,7 +97,7 @@ struct RoadGameView: View {
                         .background(Theme.sheet, in: RoundedRectangle(cornerRadius: 8))
                 }
                 StatsBar(game: game, shoe: store.current)
-                RoadsBoard(game: game, hands: store.current.hands, scale: scale, showAll: showAllRoads)
+                RoadsBoard(game: game, hands: store.current.hands, scale: scale, showAll: showAllRoads, fitCell: fitCell)
                 Button {
                     withAnimation(.easeOut(duration: 0.2)) { showAllRoads.toggle() }
                 } label: {

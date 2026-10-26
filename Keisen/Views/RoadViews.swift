@@ -201,6 +201,8 @@ struct RoadsBoard: View {
     var scale: CGFloat = 1
     /// false なら大路だけ（大きめに出す）。珠盤路・下三路は見たい人だけが出す。
     var showAll = true
+    /// 大路だけのとき、この大きさのマスにする（横向きで高さに収めるため）
+    var fitCell: CGFloat? = nil
 
     var body: some View {
         let big = Roads.bigRoad(hands)
@@ -218,6 +220,7 @@ struct RoadsBoard: View {
     /// 大路だけのときは、空いた場所を使って大きく描く（横向きは高さに収まる大きさ）
     private var bigCell: CGFloat {
         if showAll { return 22 * scale }
+        if let fitCell { return fitCell }
         return scale > 1 ? 42 : 38
     }
 
