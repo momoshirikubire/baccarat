@@ -69,6 +69,8 @@ struct RoadGrid: View {
                 }
                 .onAppear { proxy.scrollTo(target, anchor: target == "start" ? .leading : .trailing) }
                 .onChange(of: usedColumns) { proxy.scrollTo(target, anchor: target == "start" ? .leading : .trailing) }
+                // 最初は幅 0 で測られることがあるので、幅が決まって行き先が変わったら合わせ直す
+                .onChange(of: target) { proxy.scrollTo(target, anchor: target == "start" ? .leading : .trailing) }
             }
         }
         .frame(height: height)
