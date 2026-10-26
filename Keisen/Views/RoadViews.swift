@@ -90,7 +90,7 @@ struct BigRoadView: View {
         RoadGrid(cellSize: cell, usedColumns: used) { ctx in
             for c in cells {
                 let center = CGPoint(x: (CGFloat(c.x) + 0.5) * cell, y: (CGFloat(c.y) + 0.5) * cell)
-                Pen.ring(&ctx, center, radius: cell / 2 - 3.5, color: Theme.color(c.item.outcome), width: 2.6)
+                Pen.ring(&ctx, center, radius: cell / 2 - 3.5, color: Theme.color(c.item.outcome), width: max(2.6, cell / 9))
                 if c.item.ties > 0 {
                     Pen.slash(&ctx, center, radius: cell / 2 - 5, color: Theme.tie, width: 2.2)
                     if c.item.ties > 1 {
