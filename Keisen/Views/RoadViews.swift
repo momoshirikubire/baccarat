@@ -71,6 +71,8 @@ struct RoadGrid: View {
                 .onChange(of: usedColumns) { proxy.scrollTo(target, anchor: target == "start" ? .leading : .trailing) }
                 // 最初は幅 0 で測られることがあるので、幅が決まって行き先が変わったら合わせ直す
                 .onChange(of: target) { proxy.scrollTo(target, anchor: target == "start" ? .leading : .trailing) }
+                // 大路だけ表示に切り替えたときなど、マスの大きさが変わったら合わせ直す
+                .onChange(of: cellSize) { proxy.scrollTo(target, anchor: target == "start" ? .leading : .trailing) }
             }
         }
         .frame(height: height)
@@ -88,11 +90,11 @@ struct BigRoadView: View {
         RoadGrid(cellSize: cell, usedColumns: used) { ctx in
             for c in cells {
                 let center = CGPoint(x: (CGFloat(c.x) + 0.5) * cell, y: (CGFloat(c.y) + 0.5) * cell)
-                Pen.ring(&ctx, center, radius: cell / 2 - 3.5, color: Theme.color(c.item.outcome), width: 2.6)
+                Pen.ring(&ctx, center, radius: cell / 2 - 3.5, color: Theme.color(c.item.outcome), width: max(2.6, cell / 9))
                 if c.item.ties > 0 {
                     Pen.slash(&ctx, center, radius: cell / 2 - 5, color: Theme.tie, width: 2.2)
                     if c.item.ties > 1 {
-                        ctx.draw(Text("\(c.item.ties)").font(.system(size: 10, weight: .bold)).foregroundStyle(Theme.ink), at: center)
+                        ctx.draw(Text("\(c.item.ties)").font(.system(size: cell * 0.45, weight: .bold)).foregroundStyle(Theme.ink), at: center)
                     }
                 }
                 if c.item.bankerPair {
@@ -120,7 +122,7 @@ struct BeadPlateView: View {
                 let x = CGFloat(i / Roads.rows), y = CGFloat(i % Roads.rows)
                 let center = CGPoint(x: (x + 0.5) * cell, y: (y + 0.5) * cell)
                 Pen.dot(&ctx, center, radius: cell / 2 - 2.5, color: Theme.color(h.outcome))
-                ctx.draw(Text(game.bead(h.outcome)).font(.system(size: 12.5, weight: .bold)).foregroundStyle(Color.white), at: center)
+                ctx.draw(Text(game.bead(h.outcome)).font(.system(size: cell * 0.48, weight: .bold)).foregroundStyle(Color.white), at: center)
                 if h.bankerPair {
                     Pen.dot(&ctx, CGPoint(x: x * cell + 5, y: y * cell + 5), radius: 3.2, color: Theme.sheet)
                     Pen.dot(&ctx, CGPoint(x: x * cell + 5, y: y * cell + 5), radius: 2.4, color: Theme.banker)
@@ -195,16 +197,28 @@ struct RoadCard<Content: View>: View {
 struct RoadsBoard: View {
     let game: RoadGame
     let hands: [Hand]
+    /// 横向きのときはマスを大きくする
+    var scale: CGFloat = 1
+    /// false なら大路だけ（大きめに出す）。珠盤路・下三路は見たい人だけが出す。
+    var showAll = true
 
     var body: some View {
         let big = Roads.bigRoad(hands)
         VStack(spacing: 10) {
-            RoadCard(title: "大路", detail: streak(big)) { BigRoadView(road: big) }
-            RoadCard(title: "珠盤路") { BeadPlateView(game: game, hands: hands) }
-            ForEach(DerivedRoad.allCases) { road in
-                RoadCard(title: road.title) { DerivedRoadView(columns: big.columns, road: road) }
+            RoadCard(title: "大路", detail: streak(big)) { BigRoadView(road: big, cell: bigCell) }
+            if showAll {
+                RoadCard(title: "珠盤路") { BeadPlateView(game: game, hands: hands, cell: 26 * scale) }
+                ForEach(DerivedRoad.allCases) { road in
+                    RoadCard(title: road.title) { DerivedRoadView(columns: big.columns, road: road, cell: 13 * scale) }
+                }
             }
         }
+    }
+
+    /// 大路だけのときは、空いた場所を使って大きく描く（横向きは高さに収まる大きさ）
+    private var bigCell: CGFloat {
+        if showAll { return 22 * scale }
+        return scale > 1 ? 42 : 38
     }
 
     private func streak(_ big: Roads.BigRoad) -> String? {
@@ -226,8 +240,8 @@ struct StatsBar: View {
             tile("\(c.player)", game.name(.player), percent(c.player, n), Theme.player)
             tile("\(c.tie)", game.name(.tie), percent(c.tie, n), Theme.tie)
             if game.hasPairs {
-                tile("\(c.bankerPair)", "Bペア", nil, Theme.banker)
-                tile("\(c.playerPair)", "Pペア", nil, Theme.player)
+                tile("\(c.bankerPair)", "B PAIR", nil, Theme.banker)
+                tile("\(c.playerPair)", "P PAIR", nil, Theme.player)
             }
         }
     }

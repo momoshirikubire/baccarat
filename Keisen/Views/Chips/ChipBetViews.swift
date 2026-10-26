@@ -18,6 +18,7 @@ struct BaccaratView: View {
 private struct GuestBaccaratView: View {
     let chips: ChipStore
     @State private var showChips = false
+    @AppStorage("showAllRoads") private var showAllRoads = false
 
     var body: some View {
         let hands = chips.table?.hands ?? []
@@ -29,7 +30,16 @@ private struct GuestBaccaratView: View {
                         .foregroundStyle(Theme.muted)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     StatsBar(game: .baccarat, shoe: Shoe(hands: hands))
-                    RoadsBoard(game: .baccarat, hands: hands)
+                    RoadsBoard(game: .baccarat, hands: hands, showAll: showAllRoads)
+                    Button {
+                        withAnimation(.easeOut(duration: 0.2)) { showAllRoads.toggle() }
+                    } label: {
+                        Label(showAllRoads ? "大路だけにする" : "珠盤路・下三路も見る",
+                              systemImage: showAllRoads ? "chevron.up" : "chevron.down")
+                            .font(.footnote.bold())
+                            .frame(maxWidth: .infinity, minHeight: 36)
+                    }
+                    .foregroundStyle(Theme.muted)
                 }
                 .padding(12)
             }
@@ -265,7 +275,7 @@ private struct BetSheet: View {
                     }
                     Button("ベットをすべて消す", role: .destructive) { spots = [:] }
                 } footer: {
-                    Text("タイのときは、バンカーとプレイヤーへのベットはそのまま戻ります。\(table.bankerCommission ? "バンカーの勝ちは手数料5%を引いて、1 pt 未満は切り捨てます。" : "")")
+                    Text("TIE のときは、BANKER と PLAYER へのベットはそのまま次の手に残ります。\(table.bankerCommission ? "BANKER の勝ちは手数料5%を引いて、1 pt 未満は切り捨てます。" : "")")
                 }
             }
             .navigationTitle("\(member.name)のベット")

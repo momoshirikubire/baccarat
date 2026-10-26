@@ -38,7 +38,15 @@ extension ChipTable {
             }
             round.results.append(ChipResult(member: m.id, name: m.name, staked: staked, net: net))
         }
-        bets = [:]
+        // TIE のときは BANKER / PLAYER のベットが戻るので、実際のテーブルと同じく次の手にそのまま残す
+        if hand.outcome == .tie {
+            bets = bets.compactMapValues { spots in
+                let kept = spots.filter { $0.key == .banker || $0.key == .player }
+                return kept.isEmpty ? nil : kept
+            }
+        } else {
+            bets = [:]
+        }
         rounds.append(round)
         if rounds.count > 100 { rounds.removeFirst(rounds.count - 100) }
     }
