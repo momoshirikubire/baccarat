@@ -92,7 +92,7 @@ struct BigRoadView: View {
                 if c.item.ties > 0 {
                     Pen.slash(&ctx, center, radius: cell / 2 - 5, color: Theme.tie, width: 2.2)
                     if c.item.ties > 1 {
-                        ctx.draw(Text("\(c.item.ties)").font(.system(size: 10, weight: .bold)).foregroundStyle(Theme.ink), at: center)
+                        ctx.draw(Text("\(c.item.ties)").font(.system(size: cell * 0.45, weight: .bold)).foregroundStyle(Theme.ink), at: center)
                     }
                 }
                 if c.item.bankerPair {
@@ -120,7 +120,7 @@ struct BeadPlateView: View {
                 let x = CGFloat(i / Roads.rows), y = CGFloat(i % Roads.rows)
                 let center = CGPoint(x: (x + 0.5) * cell, y: (y + 0.5) * cell)
                 Pen.dot(&ctx, center, radius: cell / 2 - 2.5, color: Theme.color(h.outcome))
-                ctx.draw(Text(game.bead(h.outcome)).font(.system(size: 12.5, weight: .bold)).foregroundStyle(Color.white), at: center)
+                ctx.draw(Text(game.bead(h.outcome)).font(.system(size: cell * 0.48, weight: .bold)).foregroundStyle(Color.white), at: center)
                 if h.bankerPair {
                     Pen.dot(&ctx, CGPoint(x: x * cell + 5, y: y * cell + 5), radius: 3.2, color: Theme.sheet)
                     Pen.dot(&ctx, CGPoint(x: x * cell + 5, y: y * cell + 5), radius: 2.4, color: Theme.banker)
@@ -195,14 +195,16 @@ struct RoadCard<Content: View>: View {
 struct RoadsBoard: View {
     let game: RoadGame
     let hands: [Hand]
+    /// 横向きのときはマスを大きくする
+    var scale: CGFloat = 1
 
     var body: some View {
         let big = Roads.bigRoad(hands)
         VStack(spacing: 10) {
-            RoadCard(title: "大路", detail: streak(big)) { BigRoadView(road: big) }
-            RoadCard(title: "珠盤路") { BeadPlateView(game: game, hands: hands) }
+            RoadCard(title: "大路", detail: streak(big)) { BigRoadView(road: big, cell: 22 * scale) }
+            RoadCard(title: "珠盤路") { BeadPlateView(game: game, hands: hands, cell: 26 * scale) }
             ForEach(DerivedRoad.allCases) { road in
-                RoadCard(title: road.title) { DerivedRoadView(columns: big.columns, road: road) }
+                RoadCard(title: road.title) { DerivedRoadView(columns: big.columns, road: road, cell: 13 * scale) }
             }
         }
     }

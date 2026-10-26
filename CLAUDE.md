@@ -14,7 +14,8 @@
 - `Keisen.storekit`：チップのテスト用設定。スキームの Run → Options → StoreKit Configuration で選ぶとシミュレータで買える。
 
 ## フォルダ構成
-- 画面は5つのタブ：バカラ / ドラゴンタイガー / ブラックジャック / ポーカー / 点数表（`App/KeisenApp.swift`）。どの画面も右上のハートから応援画面を開ける（`.tipButton()`）。
+- 1.0 はバカラだけ（`App/KeisenApp.swift` はタブなしで `RoadGameView` を出す）。ドラゴンタイガー・ブラックジャック・ポーカー・点数表のコードは残してあり、あとのアップデートで TabView に戻して出す。右上のハートから応援画面を開ける（`.tipButton()`）。
+- 横向き（iPhone の verticalSizeClass が compact）では、罫線のマスを 1.35 倍にして入力盤を右端に置く。
 - `Keisen/Models/Hand.swift`：結果（B / P / T）、ペア、シュー、初回に見せる例のシュー。`RoadGame` でバカラとドラゴンタイガーの呼び名を切り替える（ドラゴン＝バンカーの位置、タイガー＝プレイヤーの位置。罫線の計算は同じ）。
 - `Keisen/Models/Roads.swift`：罫線の計算。大路（タイは直前のマスに数で付ける、6段を超えたり下が埋まっていたら右へ曲がるドラゴンテール）、下三路（大眼仔・小路・曱甴路 = 1・2・3列前と比べる）、問路（次が B / P のときに付く印）。
 - `Keisen/Store/ShoeStore.swift`：いまのシューと過去のシュー。ゲームごとに `Application Support/shoes.json`（バカラ）・`dragon-tiger.json` に保存。読み書きは `FileStore`。

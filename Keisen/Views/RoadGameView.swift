@@ -7,27 +7,29 @@ struct RoadGameView: View {
     @State private var playerPair = false
     @State private var confirmNewShoe = false
     @State private var showHistory = false
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
 
     private var game: RoadGame { store.game }
 
+    /// iPhone を横にしたとき（高さが詰まる）は、罫線を大きくして入力盤を右に置く
+    private var isLandscape: Bool { verticalSizeClass == .compact }
+
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 10) {
-                    if store.isSample {
-                        Text("いま表示しているのは例のシューです。1手目を記録すると消えて、あなたの記録が始まります。")
-                            .font(.footnote)
-                            .foregroundStyle(Theme.muted)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(10)
-                            .background(Theme.sheet, in: RoundedRectangle(cornerRadius: 8))
+            Group {
+                if isLandscape {
+                    HStack(spacing: 0) {
+                        board(scale: 1.35)
+                        deck(side: true)
+                            .frame(width: 300)
+                            .frame(maxHeight: .infinity, alignment: .bottom)
+                            .background(Theme.deck.ignoresSafeArea())
                     }
-                    StatsBar(game: game, shoe: store.current)
-                    RoadsBoard(game: game, hands: store.current.hands)
+                } else {
+                    board(scale: 1)
+                        .safeAreaInset(edge: .bottom, spacing: 0) { deck(side: false) }
                 }
-                .padding(12)
             }
-            .background(Theme.background)
             .navigationTitle("\(game.title)・\(store.current.hands.count) 手")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -43,21 +45,6 @@ struct RoadGameView: View {
                 }
             }
             .tipButton()
-            .safeAreaInset(edge: .bottom, spacing: 0) {
-                InputDeck(
-                    game: game,
-                    hands: store.current.hands,
-                    bankerPair: $bankerPair,
-                    playerPair: $playerPair,
-                    canUndo: store.canUndo,
-                    onResult: { outcome in
-                        store.record(outcome, bankerPair: bankerPair, playerPair: playerPair)
-                        bankerPair = false
-                        playerPair = false
-                    },
-                    onUndo: { store.undo() }
-                )
-            }
             .confirmationDialog("新しいシューを始めますか？", isPresented: $confirmNewShoe, titleVisibility: .visible) {
                 Button("新しいシューを始める") {
                     store.startNewShoe()
@@ -73,15 +60,52 @@ struct RoadGameView: View {
             .sheet(isPresented: $showHistory) { HistoryView(store: store) }
         }
     }
+
+    private func board(scale: CGFloat) -> some View {
+        ScrollView {
+            VStack(spacing: 10) {
+                if store.isSample {
+                    Text("いま表示しているのは例のシューです。1手目を記録すると消えて、あなたの記録が始まります。")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.muted)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(10)
+                        .background(Theme.sheet, in: RoundedRectangle(cornerRadius: 8))
+                }
+                StatsBar(game: game, shoe: store.current)
+                RoadsBoard(game: game, hands: store.current.hands, scale: scale)
+            }
+            .padding(12)
+        }
+        .background(Theme.background)
+    }
+
+    private func deck(side: Bool) -> some View {
+        InputDeck(
+            game: game,
+            hands: store.current.hands,
+            bankerPair: $bankerPair,
+            playerPair: $playerPair,
+            canUndo: store.canUndo,
+            side: side,
+            onResult: { outcome in
+                store.record(outcome, bankerPair: bankerPair, playerPair: playerPair)
+                bankerPair = false
+                playerPair = false
+            },
+            onUndo: { store.undo() }
+        )
+    }
 }
 
-/// 画面下の入力盤。問路・結果ボタン・ペア・1つ戻す。
+/// 入力盤。問路・結果ボタン・ペア・1つ戻す。縦向きは画面の下、横向きは右端に置く。
 struct InputDeck: View {
     let game: RoadGame
     let hands: [Hand]
     @Binding var bankerPair: Bool
     @Binding var playerPair: Bool
     let canUndo: Bool
+    var side = false
     let onResult: (Outcome) -> Void
     let onUndo: () -> Void
 
@@ -116,7 +140,7 @@ struct InputDeck: View {
         .padding(.horizontal, 12)
         .padding(.top, 10)
         .padding(.bottom, 6)
-        .background(Theme.deck.ignoresSafeArea(edges: .bottom))
+        .background(Theme.deck.ignoresSafeArea(edges: side ? [.bottom, .trailing] : .bottom))
         .sensoryFeedback(.impact(weight: .light), trigger: hands.count)
     }
 
