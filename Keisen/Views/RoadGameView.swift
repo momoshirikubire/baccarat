@@ -9,6 +9,7 @@ struct RoadGameView: View {
     @State private var showHistory = false
     @State private var showNudge = false
     @State private var showTips = false
+    @State private var showRules = false
     @Environment(TipStore.self) private var tips
     /// 「新しいシュー」を押した回数（応援のお願いを出す間かくに使う）
     @AppStorage("newShoeCount") private var newShoeCount = 0
@@ -49,6 +50,11 @@ struct RoadGameView: View {
                 ToolbarItem(placement: .topBarLeading) {
                     Button { showHistory = true } label: {
                         Label("履歴", systemImage: "clock.arrow.circlepath").labelStyle(.titleAndIcon)
+                    }
+                }
+                ToolbarItem(placement: .topBarLeading) {
+                    Button { showRules = true } label: {
+                        Label("ルール", systemImage: "book").labelStyle(.titleAndIcon)
                     }
                 }
                 if isLandscape {
@@ -96,6 +102,7 @@ struct RoadGameView: View {
                 Text("広告なしで使い続けられるように、よければチップで応援してください。チップを送っても機能は変わりません。")
             }
             .sheet(isPresented: $showTips) { TipJarView() }
+            .sheet(isPresented: $showRules) { RulesView() }
         }
     }
 

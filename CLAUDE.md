@@ -20,6 +20,7 @@
 - 大路のタイの印は右上の「表示」で「まる」（はじめ）か「斜線」を選ぶ（`@AppStorage("tieStyle")`、`TieStyle`）。2回以上は回数を添える。
 - 応援のお願い：「新しいシュー」を2回始めるごとにアラートを出す（「あとで」で閉じる。最後のチップから1年以内の人には出さない。`RoadGameView.maybeNudge`・`TipStore.tippedWithinYear`）。
 - 右上のボタンはアイコンだけにせず文字つき（履歴・表示・新しいシュー・応援）。
+- 左上の「ルール」（`Views/RulesView.swift`）：「3枚目の判定」（カードを選ぶと PLAYER / BANKER が3枚目を引くかと勝ち負けを出す。計算は `Models/ThirdCard.swift`）と、ルールのまとめ。
 - 結果の呼び名は英字（BANKER / PLAYER / TIE、ペアは B PAIR / P PAIR）。
 - `Keisen/Models/Hand.swift`：結果（B / P / T）、ペア、シュー、初回に見せる例のシュー。`RoadGame` でバカラとドラゴンタイガーの呼び名を切り替える（ドラゴン＝バンカーの位置、タイガー＝プレイヤーの位置。罫線の計算は同じ）。
 - `Keisen/Models/Roads.swift`：罫線の計算。大路（タイは直前のマスに数で付ける、6段を超えたり下が埋まっていたら右へ曲がるドラゴンテール）、下三路（大眼仔・小路・曱甴路 = 1・2・3列前と比べる）、問路（次が B / P のときに付く印）。
