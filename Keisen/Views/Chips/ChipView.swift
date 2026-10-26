@@ -128,7 +128,7 @@ private struct ChipTableView: View {
             if isHost {
                 ToolbarItem(placement: .topBarLeading) {
                     Button(role: .destructive) { confirmClose = true } label: {
-                        ToolbarTitle("テーブルを閉じる", systemImage: "xmark.circle")
+                        ToolbarTitle("終了する", systemImage: "flag.checkered")
                     }
                 }
                 ToolbarItem(placement: .topBarLeading) {
@@ -138,7 +138,7 @@ private struct ChipTableView: View {
                 }
             } else {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button(role: .destructive) { store.leave() } label: {
+                    Button(role: .destructive) { store.leaveWithSummary() } label: {
                         ToolbarTitle("テーブルから抜ける", systemImage: "rectangle.portrait.and.arrow.right")
                     }
                 }
@@ -172,11 +172,11 @@ private struct ChipTableView: View {
             Button("持ち点に戻す", role: .destructive) { store.restart() }
             Button("キャンセル", role: .cancel) {}
         }
-        .confirmationDialog("テーブルを閉じますか？", isPresented: $confirmClose, titleVisibility: .visible) {
-            Button("テーブルを閉じる", role: .destructive) { store.closeTable() }
+        .confirmationDialog("テーブルを終了しますか？", isPresented: $confirmClose, titleVisibility: .visible) {
+            Button("終了する", role: .destructive) { store.endTable() }
             Button("キャンセル", role: .cancel) {}
         } message: {
-            Text("つながっている人も抜けて、残高と履歴は消えます。")
+            Text("全員の画面に結果が出て、テーブルは閉じます。結果はこの iPhone に残ります。")
         }
     }
 
@@ -273,6 +273,14 @@ private struct MoveRow: View {
             Text(table.name(of: move.from)).bold()
             Image(systemName: "arrow.right").foregroundStyle(Theme.muted)
             Text(table.name(of: move.to)).bold()
+            if move.kind == .rebuy {
+                Text("追加")
+                    .font(.caption2.bold())
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 1)
+                    .background(Theme.tie, in: Capsule())
+            }
             Spacer()
             VStack(alignment: .trailing, spacing: 0) {
                 Text("\(move.amount.formatted()) pt").monospacedDigit()

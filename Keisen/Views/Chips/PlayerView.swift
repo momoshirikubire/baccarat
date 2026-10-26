@@ -114,6 +114,9 @@ private struct PlayerTableView: View {
                         RoadBoardColumn(hands: table?.hands ?? [], height: geo.size.height, showAll: $showAllRoads)
                     }
                     VStack(spacing: 8) {
+                        if let table, needsRebuy(table, balance: balance) {
+                            rebuyRequestButton(table)
+                        }
                         BetPad(spots: draft, balance: balance, commission: table?.bankerCommission ?? false,
                                previous: table?.lastRound?.bets[chips.myID],
                                minBet: table?.minBet ?? 0, maxBet: table?.maxBet ?? 0) { spots in
@@ -181,6 +184,23 @@ private struct PlayerTableView: View {
         // 親に断られたら、親の持っているベットに戻す
         .onChange(of: chips.notice) { if chips.notice != nil { draft = chips.table?.bets[chips.myID] ?? [:] } }
         .sensoryFeedback(.success, trigger: table?.lastRound?.id)
+    }
+
+    /// 使える額が下限（なければ 1 pt）より少なくなったら、親に追加をお願いできる
+    private func needsRebuy(_ table: ChipTable, balance: Int) -> Bool {
+        balance - draft.values.reduce(0, +) < max(1, table.minBet)
+    }
+
+    private func rebuyRequestButton(_ table: ChipTable) -> some View {
+        let requested = table.rebuyRequests.contains(chips.myID)
+        return Button { chips.requestRebuy() } label: {
+            Label(requested ? "追加をお願いしました" : "親に追加をお願いする", systemImage: "hand.raised.fill")
+                .font(.subheadline.bold())
+                .foregroundStyle(.black)
+                .frame(maxWidth: .infinity, minHeight: 36)
+                .background(Theme.warning.opacity(requested ? 0.5 : 1), in: RoundedRectangle(cornerRadius: 10))
+        }
+        .disabled(requested)
     }
 
     /// 上の帯：みんなの残高とベット（見るだけ）。自分のカードは明るくする。

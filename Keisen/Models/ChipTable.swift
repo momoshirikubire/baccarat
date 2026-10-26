@@ -18,6 +18,13 @@ struct ChipTable: Codable, Hashable {
     var hands: [Hand] = []
     /// 精算した手。新しいものが最後。「1つ戻す」で取り消せるように少し残す。
     var rounds: [ChipRound] = []
+    /// 参加者ごとの成績（終了したときの結果に使う）
+    var stats: [UUID: ChipStats] = [:]
+    /// 精算した手の数
+    var settledHands = 0
+    var createdAt = Date()
+    /// 「親に追加をお願いする」を押した参加者
+    var rebuyRequests: Set<UUID> = []
 
     init(name: String, startingChips: Int, bankerCommission: Bool = false, minBet: Int = 0, maxBet: Int = 0) {
         self.name = name
@@ -29,6 +36,7 @@ struct ChipTable: Codable, Hashable {
 
     private enum CodingKeys: String, CodingKey {
         case name, startingChips, members, moves, bets, bankerCommission, minBet, maxBet, hands, rounds
+        case stats, settledHands, createdAt, rebuyRequests
     }
 
     // 前に保存したテーブルも読めるように、足りない項目は既定の値にする（ポットがあった頃の pot は読み捨てる）
@@ -44,6 +52,10 @@ struct ChipTable: Codable, Hashable {
         maxBet = try c.decodeIfPresent(Int.self, forKey: .maxBet) ?? 0
         hands = try c.decodeIfPresent([Hand].self, forKey: .hands) ?? []
         rounds = try c.decodeIfPresent([ChipRound].self, forKey: .rounds) ?? []
+        stats = try c.decodeIfPresent([UUID: ChipStats].self, forKey: .stats) ?? [:]
+        settledHands = try c.decodeIfPresent(Int.self, forKey: .settledHands) ?? 0
+        createdAt = try c.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
+        rebuyRequests = try c.decodeIfPresent(Set<UUID>.self, forKey: .rebuyRequests) ?? []
     }
 
     func member(_ id: UUID) -> ChipMember? {
@@ -87,10 +99,17 @@ struct ChipTable: Codable, Hashable {
         return nil
     }
 
-    mutating func apply(_ move: ChipMove) {
+    /// settlement が false（配る・回収する・渡す）のときは、場とのやり取りを「配られた持ち点」として数える
+    mutating func apply(_ move: ChipMove, settlement: Bool = false) {
         add(-move.amount, to: move.from)
         add(move.amount, to: move.to)
         moves.append(move)
+        guard !settlement else { return }
+        switch (move.from, move.to) {
+        case (.bank, .member(let id)): stats[id, default: ChipStats()].dealt += move.amount
+        case (.member(let id), .bank): stats[id, default: ChipStats()].dealt -= move.amount
+        default: break
+        }
     }
 
     private mutating func add(_ amount: Int, to party: ChipParty) {
@@ -122,6 +141,15 @@ struct ChipTable: Codable, Hashable {
         members.removeAll { $0.id == id }
     }
 
+    /// 追加（リバイ）：場からその人に pt を足す。もらった合計に入り、お願いの印は消える。
+    mutating func rebuy(_ id: UUID, amount: Int, by: UUID) {
+        guard amount > 0, member(id) != nil else { return }
+        apply(ChipMove(from: .bank, to: .member(id), amount: amount, by: by, kind: .rebuy))
+        stats[id, default: ChipStats()].rebuys += 1
+        stats[id, default: ChipStats()].rebuyTotal += amount
+        rebuyRequests.remove(id)
+    }
+
     /// 全員の残高を持ち点に戻して、履歴を消す
     mutating func restart() {
         let people = members
@@ -129,7 +157,102 @@ struct ChipTable: Codable, Hashable {
         moves = []
         bets = [:]
         rounds = []
+        stats = [:]
+        rebuyRequests = []
+        settledHands = 0
+        createdAt = Date()
         for m in people { join(id: m.id, name: m.name) }
+    }
+}
+
+/// 参加者ごとの成績。配られた持ち点（場から配られた分から、場へ戻した分を引いた額）と、勝った手・ベットした手の数。
+struct ChipStats: Codable, Hashable {
+    /// もらった合計（はじめの持ち点＋追加。場へ戻した分は引く）
+    var dealt = 0
+    var wins = 0
+    var betHands = 0
+    /// 追加（リバイ）の回数と合計
+    var rebuys = 0
+    var rebuyTotal = 0
+
+    init(dealt: Int = 0) {
+        self.dealt = dealt
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case dealt, wins, betHands, rebuys, rebuyTotal
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        dealt = try c.decodeIfPresent(Int.self, forKey: .dealt) ?? 0
+        wins = try c.decodeIfPresent(Int.self, forKey: .wins) ?? 0
+        betHands = try c.decodeIfPresent(Int.self, forKey: .betHands) ?? 0
+        rebuys = try c.decodeIfPresent(Int.self, forKey: .rebuys) ?? 0
+        rebuyTotal = try c.decodeIfPresent(Int.self, forKey: .rebuyTotal) ?? 0
+    }
+}
+
+/// 終了したテーブルの結果（全員に配り、親の端末には直近の分を残す）
+struct ChipSummary: Codable, Hashable, Identifiable {
+    var id = UUID()
+    var tableName: String
+    var startedAt: Date
+    var endedAt: Date
+    var hands: Int
+    /// 増減の大きい順
+    var rows: [Row]
+
+    struct Row: Codable, Hashable, Identifiable {
+        var id: UUID
+        var name: String
+        var balance: Int
+        /// はじめからの増減（残高 − 配られた持ち点）
+        var net: Int
+        var wins: Int
+        var betHands: Int
+        var rebuys = 0
+        var rebuyTotal = 0
+
+        init(id: UUID, name: String, balance: Int, net: Int, wins: Int, betHands: Int, rebuys: Int = 0, rebuyTotal: Int = 0) {
+            self.id = id
+            self.name = name
+            self.balance = balance
+            self.net = net
+            self.wins = wins
+            self.betHands = betHands
+            self.rebuys = rebuys
+            self.rebuyTotal = rebuyTotal
+        }
+
+        private enum CodingKeys: String, CodingKey {
+            case id, name, balance, net, wins, betHands, rebuys, rebuyTotal
+        }
+
+        // 追加（リバイ）より前に残した結果も読めるように
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            id = try c.decode(UUID.self, forKey: .id)
+            name = try c.decode(String.self, forKey: .name)
+            balance = try c.decode(Int.self, forKey: .balance)
+            net = try c.decode(Int.self, forKey: .net)
+            wins = try c.decodeIfPresent(Int.self, forKey: .wins) ?? 0
+            betHands = try c.decodeIfPresent(Int.self, forKey: .betHands) ?? 0
+            rebuys = try c.decodeIfPresent(Int.self, forKey: .rebuys) ?? 0
+            rebuyTotal = try c.decodeIfPresent(Int.self, forKey: .rebuyTotal) ?? 0
+        }
+    }
+}
+
+extension ChipTable {
+    func summary(endedAt: Date = Date()) -> ChipSummary {
+        let rows = members.map { m in
+            let s = stats[m.id] ?? ChipStats(dealt: startingChips)
+            return ChipSummary.Row(id: m.id, name: m.name, balance: m.balance, net: m.balance - s.dealt,
+                                   wins: s.wins, betHands: s.betHands, rebuys: s.rebuys, rebuyTotal: s.rebuyTotal)
+        }
+        .sorted { $0.net != $1.net ? $0.net > $1.net : $0.balance > $1.balance }
+        return ChipSummary(tableName: name, startedAt: createdAt, endedAt: endedAt, hands: settledHands, rows: rows)
     }
 }
 
@@ -184,4 +307,10 @@ struct ChipMove: Codable, Hashable, Identifiable {
     var amount: Int
     /// 操作した人
     var by: UUID
+    /// 追加（リバイ）など、履歴に分かるように出す種類。前の保存データにはない。
+    var kind: Kind? = nil
+
+    enum Kind: String, Codable {
+        case rebuy
+    }
 }

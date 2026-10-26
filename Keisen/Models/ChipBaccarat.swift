@@ -52,10 +52,12 @@ extension ChipTable {
                 let move = net > 0
                     ? ChipMove(from: .bank, to: .member(m.id), amount: net, by: by)
                     : ChipMove(from: .member(m.id), to: .bank, amount: -net, by: by)
-                apply(move)
+                apply(move, settlement: true)
                 round.moveIDs.append(move.id)
             }
             round.results.append(ChipResult(member: m.id, name: m.name, staked: staked, net: net))
+            stats[m.id, default: ChipStats(dealt: startingChips)].betHands += 1
+            if net > 0 { stats[m.id, default: ChipStats(dealt: startingChips)].wins += 1 }
         }
         // TIE のときは BANKER / PLAYER のベットが戻るので、実際のテーブルと同じく次の手にそのまま残す
         if hand.outcome == .tie {
@@ -66,6 +68,7 @@ extension ChipTable {
         } else {
             bets = [:]
         }
+        settledHands += 1
         rounds.append(round)
         if rounds.count > 100 { rounds.removeFirst(rounds.count - 100) }
     }
@@ -86,6 +89,11 @@ extension ChipTable {
                 members[j].balance += move.amount
             }
         }
+        for r in round.results {
+            stats[r.member]?.betHands -= 1
+            if r.net > 0 { stats[r.member]?.wins -= 1 }
+        }
+        settledHands = max(0, settledHands - 1)
         bets = round.bets.filter { member($0.key) != nil }
         return true
     }

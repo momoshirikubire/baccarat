@@ -32,6 +32,17 @@ struct RootView: View {
     @State private var announcement: ResultAnnouncement?
 
     var body: some View {
+        content
+            // テーブルを終了した・抜けたときの結果。閉じると使い方を選ぶ画面に戻る。
+            .fullScreenCover(item: Binding(get: { chips.summary }, set: { chips.summary = $0 })) { summary in
+                SummaryView(summary: summary, myID: chips.myID) {
+                    chips.summary = nil
+                    mode = .choose
+                }
+            }
+    }
+
+    @ViewBuilder private var content: some View {
         switch mode {
         case .choose:
             ModePickerView { mode = $0 }
@@ -114,16 +125,16 @@ struct ModeButton: View {
             ToolbarTitle("使い方", systemImage: "rectangle.2.swap")
         }
         .accessibilityLabel("使い方を変える")
-        .confirmationDialog(chips.role == .host ? "テーブルを閉じて、使い方を変えますか？" : "テーブルから抜けて、使い方を変えますか？",
+        .confirmationDialog(chips.role == .host ? "テーブルを終了して、使い方を変えますか？" : "テーブルから抜けて、使い方を変えますか？",
                             isPresented: $confirm, titleVisibility: .visible) {
-            Button(chips.role == .host ? "テーブルを閉じる" : "テーブルから抜ける", role: .destructive) {
-                if chips.role == .host { chips.closeTable() } else { chips.leave() }
-                mode = .choose
+            Button(chips.role == .host ? "終了する" : "テーブルから抜ける", role: .destructive) {
+                // 結果の画面が出て、閉じると使い方を選ぶ画面に戻る
+                if chips.role == .host { chips.endTable() } else { chips.leaveWithSummary() }
             }
             Button("キャンセル", role: .cancel) {}
         } message: {
             Text(chips.role == .host
-                 ? "つながっている人も抜けて、残高と履歴は消えます。"
+                 ? "全員の画面に結果が出て、テーブルは閉じます。"
                  : "あとで同じテーブルに参加し直すと、残りのチップから続けられます。")
         }
     }

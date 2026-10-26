@@ -30,6 +30,10 @@ final class ChipStore: NSObject {
     private(set) var found: [FoundTable] = []
     /// 親に断られたときなどの知らせ
     var notice: String?
+    /// 終了・抜けたときに出す結果。閉じると nil。
+    var summary: ChipSummary?
+    /// 親の端末に残す、終わったテーブルの結果（新しい順、直近10回）
+    private(set) var pastSummaries: [ChipSummary] = []
 
     /// この端末の参加者ID。つなぎ直しても同じ人として残高が続く。
     let myID: UUID
@@ -46,6 +50,7 @@ final class ChipStore: NSObject {
 
     private static let serviceType = "keisen-chips"
     private static let file = "chips.json"
+    private static let summariesFile = "chip-results.json"
 
     private struct Saved: Codable {
         var table: ChipTable
@@ -62,6 +67,7 @@ final class ChipStore: NSObject {
         }
         myName = defaults.string(forKey: "chipName") ?? ""
         super.init()
+        pastSummaries = FileStore.load([ChipSummary].self, from: Self.summariesFile) ?? []
         if let saved = FileStore.load(Saved.self, from: Self.file) {
             role = .host
             table = saved.table
@@ -139,6 +145,37 @@ final class ChipStore: NSObject {
         isOpen = open
     }
 
+    /// 親：テーブルを終える。結果を全員に配ってから（届くよう少し待って）閉じ、この端末の結果に残す。
+    func endTable() {
+        guard role == .host, let table else { return }
+        let result = table.summary()
+        pastSummaries.insert(result, at: 0)
+        if pastSummaries.count > 10 { pastSummaries.removeLast(pastSummaries.count - 10) }
+        FileStore.save(pastSummaries, to: Self.summariesFile)
+        send(.ended(result))
+        summary = result
+        // 新しい人は入れないようにして、画面はすぐ結果に切り替える
+        advertiser?.stopAdvertisingPeer()
+        advertiser = nil
+        isOpen = false
+        self.table = nil
+        code = ""
+        role = .none
+        try? FileManager.default.removeItem(at: FileStore.url(Self.file))
+        // つながっている人に結果が届いてから切る
+        let session = session
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
+            guard let self, self.session === session else { return }
+            self.disconnect()
+        }
+    }
+
+    /// 子：その時点の自分たちの結果を出して、テーブルから抜ける
+    func leaveWithSummary() {
+        if let table { summary = table.summary() }
+        leave()
+    }
+
     func closeTable() {
         if isOpen { setOpen(false) }
         table = nil
@@ -203,6 +240,20 @@ final class ChipStore: NSObject {
         case .none:
             break
         }
+    }
+
+    /// 親：追加（リバイ）。場からその人に pt を足す。
+    func rebuy(_ id: UUID, amount: Int) {
+        guard role == .host, var t = table, amount > 0 else { return }
+        t.rebuy(id, amount: amount, by: myID)
+        table = t
+        commit()
+    }
+
+    /// 子：親に追加をお願いする
+    func requestRebuy() {
+        guard role == .guest else { return }
+        send(.rebuyRequest(myID))
     }
 
     /// バカラのベットを入れ直す。親は全員分、子は自分の分だけ（親に送って確かめてもらう）。
@@ -270,6 +321,8 @@ final class ChipStore: NSObject {
         case state(ChipTable)
         case rejected(String)
         case closed
+        case ended(ChipSummary)
+        case rebuyRequest(UUID)
     }
 
     private struct Invitation: Codable {
@@ -362,6 +415,14 @@ final class ChipStore: NSObject {
             table = t
         case (.guest, .rejected(let reason)):
             notice = reason
+        case (.host, .rebuyRequest(let member)):
+            guard var t = table, members[peer] == member, t.member(member) != nil else { return }
+            t.rebuyRequests.insert(member)
+            table = t
+            commit()
+        case (.guest, .ended(let result)):
+            summary = result
+            leave()
         case (.guest, .closed):
             leave()
             notice = "テーブルを作った人がテーブルを閉じました。"

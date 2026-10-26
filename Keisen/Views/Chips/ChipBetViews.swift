@@ -73,8 +73,22 @@ struct MemberBetCard: View {
                                          : lastNet < 0 ? Color(light: 0xFF8A96, dark: 0xFF8A96) : Theme.deckInk)
                 }
             }
-            Text("\(member.balance.formatted()) pt").font(.caption2.monospacedDigit()).opacity(0.8)
-            if spots.isEmpty {
+            HStack(spacing: 4) {
+                Text("\(member.balance.formatted()) pt").font(.caption2.monospacedDigit()).opacity(0.8)
+                // もらった合計（はじめの持ち点＋追加）からの増減
+                let total = member.balance - (table.stats[member.id]?.dealt ?? table.startingChips)
+                Text("(\(total == 0 ? "±0" : signed(total)))")
+                    .font(.system(size: 9).monospacedDigit())
+                    .opacity(0.65)
+            }
+            if table.rebuyRequests.contains(member.id) {
+                Text("追加をお願い中")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(.black)
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 1)
+                    .background(Theme.warning, in: Capsule())
+            } else if spots.isEmpty {
                 Text("ベットなし").font(.caption2).opacity(0.6)
             } else {
                 HStack(spacing: 4) {
@@ -107,13 +121,16 @@ struct MemberBetCard: View {
 struct BetSheet: View {
     let member: ChipMember
     let table: ChipTable
+    var onRebuy: (() -> Void)? = nil
     let onSave: ([BetSpot: Int]) -> Void
     @State private var spots: [BetSpot: Int]
     @Environment(\.dismiss) private var dismiss
 
-    init(member: ChipMember, table: ChipTable, initial: [BetSpot: Int], onSave: @escaping ([BetSpot: Int]) -> Void) {
+    init(member: ChipMember, table: ChipTable, initial: [BetSpot: Int], onRebuy: (() -> Void)? = nil,
+         onSave: @escaping ([BetSpot: Int]) -> Void) {
         self.member = member
         self.table = table
+        self.onRebuy = onRebuy
         self.onSave = onSave
         _spots = State(initialValue: initial)
     }
@@ -121,6 +138,21 @@ struct BetSheet: View {
     var body: some View {
         NavigationStack {
             ScrollView {
+                if let onRebuy {
+                    Button {
+                        dismiss()
+                        onRebuy()
+                    } label: {
+                        Label(table.rebuyRequests.contains(member.id) ? "追加する（お願いが来ています）" : "ポイントを追加する（リバイ）",
+                              systemImage: "plus.circle.fill")
+                            .font(.subheadline.bold())
+                            .frame(maxWidth: .infinity, minHeight: 40)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(table.rebuyRequests.contains(member.id) ? Theme.warning : Theme.ink)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 8)
+                }
                 BetPad(spots: spots, balance: member.balance, commission: table.bankerCommission,
                        previous: table.lastRound?.bets[member.id],
                        minBet: table.minBet, maxBet: table.maxBet) { spots = $0 }

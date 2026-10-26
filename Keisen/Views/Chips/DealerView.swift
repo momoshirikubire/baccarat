@@ -66,6 +66,11 @@ private struct DealerSetupView: View {
                 } footer: {
                     Text("チップは pt で数える遊び用の記録です。お金に換えたり、精算に使ったりはしないでください。")
                 }
+                if !chips.pastSummaries.isEmpty {
+                    Section("これまでの結果") {
+                        PastSummariesList(summaries: chips.pastSummaries)
+                    }
+                }
             }
             .scrollDismissesKeyboard(.interactively)
             .navigationTitle("テーブルを作る")
@@ -106,6 +111,13 @@ private struct DealerTableView: View {
     @AppStorage("tieStyle") private var tieStyle: TieStyle = .dot
     @AppStorage("speakResults") private var speakResults = true
     @State private var announcement: ResultAnnouncement?
+    @State private var rebuyTarget: ChipMember?
+    @State private var rebuyAmount: Int?
+
+    private func startRebuy(_ m: ChipMember) {
+        rebuyAmount = chips.table?.startingChips ?? 1000
+        rebuyTarget = m
+    }
 
     /// 記録係も自分でベットしているか
     private var isPlaying: Bool { chips.table?.member(chips.myID) != nil }
@@ -212,13 +224,23 @@ private struct DealerTableView: View {
         }
         .sheet(item: $editing) { m in
             if let table = chips.table {
-                BetSheet(member: m, table: table, initial: table.bets[m.id] ?? [:]) { spots in
+                BetSheet(member: m, table: table, initial: table.bets[m.id] ?? [:],
+                         onRebuy: { DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { startRebuy(m) } }) { spots in
                     chips.placeBet(spots, for: m.id)
                 }
             }
         }
         .sheet(isPresented: $showManage) { ChipManageSheet(store: chips) }
         .sheet(isPresented: $showHistory) { HistoryView(store: shoe) }
+        .alert("追加（リバイ）", isPresented: Binding(get: { rebuyTarget != nil }, set: { if !$0 { rebuyTarget = nil } })) {
+            TextField("pt", value: $rebuyAmount, format: .number).keyboardType(.numberPad)
+            Button("追加する") {
+                if let m = rebuyTarget, let amount = rebuyAmount, amount > 0 { chips.rebuy(m.id, amount: amount) }
+            }
+            Button("キャンセル", role: .cancel) {}
+        } message: {
+            Text("\(rebuyTarget?.name ?? "")さんに、場から pt を足します。")
+        }
         .alert("参加者を足す", isPresented: $addingMember) {
             TextField("名前", text: $newMember)
             Button("足す") { chips.addLocalMember(newMember) }
@@ -290,11 +312,22 @@ private struct DealerTableView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 6) {
                     ForEach(table.members) { m in
-                        Button { editing = m } label: {
-                            MemberBetCard(member: m, table: table,
-                                          lastNet: last?.results.first { $0.member == m.id }?.net)
+                        VStack(spacing: 3) {
+                            Button { editing = m } label: {
+                                MemberBetCard(member: m, table: table,
+                                              lastNet: last?.results.first { $0.member == m.id }?.net)
+                            }
+                            .buttonStyle(PressStyle())
+                            if table.rebuyRequests.contains(m.id) {
+                                Button { startRebuy(m) } label: {
+                                    Text("追加する")
+                                        .font(.caption2.bold())
+                                        .foregroundStyle(.black)
+                                        .frame(maxWidth: .infinity, minHeight: 22)
+                                        .background(Theme.warning, in: RoundedRectangle(cornerRadius: 6))
+                                }
+                            }
                         }
-                        .buttonStyle(PressStyle())
                     }
                     Button { newMember = ""; addingMember = true } label: {
                         Label("参加者を足す", systemImage: "person.badge.plus")
