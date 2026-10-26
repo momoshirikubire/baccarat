@@ -114,7 +114,7 @@ struct DeveloperNote: View {
                           color: Color(red: 0.88, green: 0.19, blue: 0.47))
                 snsButton("TikTok", systemImage: "music.note",
                           url: "https://www.tiktok.com/@momoshiri_kubire",
-                          color: .black)
+                          color: Color(white: 0.12))
             }
         }
     }
@@ -123,6 +123,7 @@ struct DeveloperNote: View {
         Link(destination: URL(string: url)!) {
             Label(title, systemImage: systemImage)
                 .font(.footnote.bold())
+                .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
         }
         .buttonStyle(.borderedProminent)
