@@ -99,6 +99,11 @@ struct DeveloperNote: View {
             }
             Text("はじめまして、バカラノートを作っている桃尻くびれちゃんです。ふだんは筋トレの発信をしながら、ひとりでアプリを作っています。もともとは、自分がテーブルで使いたくて作りました。")
             Text("App Store に出すための年間の登録料やテスト用の端末は、ぜんぶ自費です。画面をすっきり使ってほしいので、広告は入れていません。気に入ってもらえたら、応援してもらえるとすごくうれしいです。")
+            // SNS のプロフィールだけにつなぐ（投げ銭などアプリの外での支払いには案内しない）
+            Link(destination: URL(string: "https://www.instagram.com/momoshiri_kubire/")!) {
+                Label("Instagram で見る（@momoshiri_kubire）", systemImage: "camera")
+                    .font(.subheadline.bold())
+            }
             Text("チップを送らなくても、すべての機能を使えます。チップを送っても機能は変わりません。")
                 .font(.caption)
                 .foregroundStyle(.secondary)
