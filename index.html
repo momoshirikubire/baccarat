@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="罫線ノート">
+<meta name="theme-color" content="#18201c">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<style>
+:root { color-scheme: light; padding-top: env(safe-area-inset-top, 0px); padding-bottom: 0; box-sizing: border-box; height: 100%; }
+body { margin: 0; font-size: 14px; }
+[hidden] { display: none !important; }
+</style>
+<title>バカラ罫線ノート</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@500;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: scoreboard sheet that scrolls, with a fixed input deck at the thumb's reach */
+:root {
+  --bg: #eef1ee;
+  --sheet: #ffffff;
+  --fg: #18201c;
+  --muted: #5d6a63;
+  --line: #dfe5e1;
+  --line-strong: #c3ccc6;
+  --banker: #c81e32;
+  --player: #1f4fd1;
+  --tie: #128a55;
+  --deck: #18201c;
+  --deck-fg: #f3f6f4;
+  --deck-btn: #2a332e;
+  --font-ui: "Zen Kaku Gothic New", "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;
+  --font-num: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1210; --sheet: #151c18; --fg: #e8eeea; --muted: #94a39a;
+    --line: #243029; --line-strong: #34433a;
+    --banker: #ff5a6a; --player: #6d95ff; --tie: #3fc58a;
+    --deck: #050806; --deck-fg: #e8eeea; --deck-btn: #1c2520;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1210; --sheet: #151c18; --fg: #e8eeea; --muted: #94a39a;
+  --line: #243029; --line-strong: #34433a;
+  --banker: #ff5a6a; --player: #6d95ff; --tie: #3fc58a;
+  --deck: #050806; --deck-fg: #e8eeea; --deck-btn: #1c2520;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-ui);
+  -webkit-tap-highlight-color: transparent;
+}
+.app { display: flex; flex-direction: column; height: 100%; }
+.sheet-wrap {
+  flex: 1; overflow-y: auto; min-height: 0;
+  padding-left: max(12px, env(safe-area-inset-left, 0px));
+  padding-right: max(12px, env(safe-area-inset-right, 0px));
+  padding-block: 12px 16px;
+}
+.sheet { max-width: 960px; margin: 0 auto; display: grid; gap: 10px; }
+header.top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+h1 { font-size: 17px; margin: 0; letter-spacing: .02em; text-wrap: balance; }
+.hand-no { font-family: var(--font-num); font-size: 13px; color: var(--muted); }
+.stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.stat {
+  background: var(--sheet); border: 1px solid var(--line); border-radius: 8px;
+  padding: 6px 4px; text-align: center; min-width: 0;
+}
+.stat b { display: block; font-family: var(--font-num); font-size: 18px; font-variant-numeric: tabular-nums; line-height: 1.15; }
+.stat span { display: block; font-size: 10px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stat small { display: block; font-family: var(--font-num); font-size: 10px; color: var(--muted); }
+.stat.b b { color: var(--banker); } .stat.p b { color: var(--player); } .stat.t b { color: var(--tie); }
+.road { background: var(--sheet); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.road h2 {
+  margin: 0; padding: 5px 10px; font-size: 12px; font-weight: 700; color: var(--muted);
+  letter-spacing: .08em; display: flex; justify-content: space-between; gap: 8px;
+  border-bottom: 1px solid var(--line);
+}
+.road h2 em { font-style: normal; font-weight: 500; letter-spacing: 0; }
+.scroller { overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; }
+.scroller svg { display: block; }
+.derived { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 720px) { .derived { grid-template-columns: 1fr; } }
+.notice {
+  font-size: 12px; color: var(--muted); background: var(--sheet); border: 1px dashed var(--line-strong);
+  border-radius: 8px; padding: 8px 10px; line-height: 1.6;
+}
+
+/* input deck */
+.deck {
+  background: var(--deck); color: var(--deck-fg);
+  padding-left: max(12px, env(safe-area-inset-left, 0px));
+  padding-right: max(12px, env(safe-area-inset-right, 0px));
+  padding-block: 10px calc(10px + env(safe-area-inset-bottom, 0px));
+}
+.deck-inner { max-width: 960px; margin: 0 auto; display: grid; gap: 8px; }
+.ask { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px; }
+.ask div { display: flex; align-items: center; gap: 6px; background: var(--deck-btn); border-radius: 8px; padding: 5px 8px; min-width: 0; }
+.ask .lbl { font-weight: 700; }
+.ask .lbl.b { color: var(--banker); } .ask .lbl.p { color: var(--player); }
+.ask svg { flex: none; }
+.ask .none { color: #8a978f; font-size: 11px; }
+.main-btns { display: grid; grid-template-columns: 1fr .7fr 1fr; gap: 8px; }
+button {
+  font-family: var(--font-ui); font-weight: 700; border: 0; cursor: pointer; color: inherit;
+  border-radius: 10px; touch-action: manipulation;
+}
+button:focus-visible { outline: 3px solid #f5c542; outline-offset: 2px; }
+.res { padding: 14px 4px; font-size: 18px; color: #fff; display: grid; gap: 2px; justify-items: center; }
+.res small { font-size: 11px; font-weight: 500; opacity: .85; }
+.res.b { background: var(--banker); } .res.p { background: var(--player); } .res.t { background: var(--tie); }
+.res:active { transform: scale(.97); }
+.sub-btns { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; }
+.sub-btns button { background: var(--deck-btn); color: var(--deck-fg); padding: 10px 4px; font-size: 13px; }
+.sub-btns button[aria-pressed="true"].bp { background: var(--banker); color: #fff; }
+.sub-btns button[aria-pressed="true"].pp { background: var(--player); color: #fff; }
+.sub-btns button.arm { background: #f5c542; color: #18201c; }
+@media (prefers-reduced-motion: reduce) { .res:active { transform: none; } }
+</style>
+
+</head>
+<body>
+<div class="app">
+  <div class="sheet-wrap" id="sheetWrap">
+    <div class="sheet">
+      <header class="top">
+        <h1>バカラ罫線ノート</h1>
+        <span class="hand-no" id="handNo">0 手目</span>
+      </header>
+      <div class="notice" id="sampleNote" hidden>いま表示しているのはサンプルのシューです。「新シュー」を2回タップすると空の状態から記録を始められます。記録はこの端末のブラウザにだけ保存されます。</div>
+      <div class="stats" id="stats"></div>
+      <section class="road"><h2>大路 <em id="bigInfo"></em></h2><div class="scroller" id="bigRoad"></div></section>
+      <section class="road"><h2>珠盤路</h2><div class="scroller" id="beadRoad"></div></section>
+      <div class="derived">
+        <section class="road"><h2>大眼仔</h2><div class="scroller" id="eyeRoad"></div></section>
+        <section class="road"><h2>小路</h2><div class="scroller" id="smallRoad"></div></section>
+        <section class="road"><h2>曱甴路</h2><div class="scroller" id="roachRoad"></div></section>
+      </div>
+    </div>
+  </div>
+
+  <div class="deck">
+    <div class="deck-inner">
+      <div class="ask" aria-label="問路（次の結果ごとの下三路の予測）">
+        <div><span class="lbl b">B なら</span><span id="askB"></span></div>
+        <div><span class="lbl p">P なら</span><span id="askP"></span></div>
+      </div>
+      <div class="main-btns">
+        <button class="res b" id="btnB">バンカー<small>B 庄</small></button>
+        <button class="res t" id="btnT">タイ<small>T 和</small></button>
+        <button class="res p" id="btnP">プレイヤー<small>P 闲</small></button>
+      </div>
+      <div class="sub-btns">
+        <button class="bp" id="btnBP" aria-pressed="false">B ペア</button>
+        <button class="pp" id="btnPP" aria-pressed="false">P ペア</button>
+        <button id="btnUndo">1つ戻す</button>
+        <button id="btnNew">新シュー</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const KEY = 'baccarat-roads-v1';
+  const ROWS = 6;
+  const SAMPLE = 'BBPTPPPBBBBPBPPTPBBBPPPPPPPBPBBTBPPBBPB'.split('').map((r, i) => ({ r, bp: i === 5, pp: i === 17 }));
+
+  let state = load();
+  let pairs = { bp: false, pp: false };
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(KEY);
+      if (raw) { const s = JSON.parse(raw); if (Array.isArray(s.hands)) return { hands: s.hands, sample: !!s.sample }; }
+    } catch (e) {}
+    return { hands: SAMPLE.slice(), sample: true };
+  }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+
+  // ---- road logic ----
+
+  // Group a sequence of keyed items into logical columns (a new column when the key changes).
+  function toColumns(items, key) {
+    const cols = [];
+    for (const it of items) {
+      const last = cols[cols.length - 1];
+      if (last && key(last[0]) === key(it)) last.push(it); else cols.push([it]);
+    }
+    return cols;
+  }
+
+  // Place logical columns on a 6-row grid, turning right (dragon tail) when blocked.
+  function place(cols) {
+    const occ = new Set();
+    const cells = [];
+    let startX = -1;
+    for (const col of cols) {
+      startX++;
+      while (occ.has(startX + ',0')) startX++;
+      let x = startX, y = 0, turned = false;
+      col.forEach((it, i) => {
+        if (i > 0) {
+          if (!turned && y + 1 < ROWS && !occ.has(x + ',' + (y + 1))) y++;
+          else { x++; turned = true; }
+        }
+        occ.add(x + ',' + y);
+        cells.push({ x, y, it });
+      });
+    }
+    return cells;
+  }
+
+  function bigRoadColumns(hands) {
+    const entries = [];
+    let leadTies = 0;
+    for (const h of hands) {
+      if (h.r === 'T') {
+        if (entries.length) entries[entries.length - 1].ties++; else leadTies++;
+      } else {
+        entries.push({ r: h.r, ties: 0, bp: h.bp, pp: h.pp });
+      }
+    }
+    if (entries.length) entries[0].ties += leadTies;
+    return { cols: toColumns(entries, e => e.r), leadTies: entries.length ? 0 : leadTies };
+  }
+
+  // Derived roads: k = 1 (大眼仔), 2 (小路), 3 (曱甴路). Returns 'R' / 'B' per mark.
+  function derivedMarks(cols, k) {
+    const marks = [];
+    cols.forEach((col, c) => {
+      col.forEach((_, r) => {
+        if (r === 0) {
+          if (c - 1 - k < 0) return;
+          marks.push(cols[c - 1].length === cols[c - 1 - k].length ? 'R' : 'B');
+        } else {
+          if (c - k < 0) return;
+          marks.push(cols[c - k].length === r ? 'B' : 'R');
+        }
+      });
+    });
+    return marks;
+  }
+
+  function nextMark(hands, k, r) {
+    const before = derivedMarks(bigRoadColumns(hands).cols, k).length;
+    const after = derivedMarks(bigRoadColumns(hands.concat({ r })).cols, k);
+    return after.length > before ? after[after.length - 1] : null;
+  }
+
+  // ---- drawing ----
+
+  const colorOf = c => c === 'B' || c === 'R' ? 'var(--banker)' : c === 'P' || c === 'BL' ? 'var(--player)' : 'var(--tie)';
+
+  function grid(container, cellSize, usedCols, body) {
+    const w = container.clientWidth || 320;
+    const cols = Math.max(usedCols + 4, Math.ceil(w / cellSize));
+    const W = cols * cellSize, H = ROWS * cellSize;
+    let lines = '';
+    for (let i = 0; i <= cols; i++) lines += `<line x1="${i * cellSize}" y1="0" x2="${i * cellSize}" y2="${H}"/>`;
+    for (let j = 0; j <= ROWS; j++) lines += `<line x1="0" y1="${j * cellSize}" x2="${W}" y2="${j * cellSize}"/>`;
+    container.innerHTML = `<svg width="${W}" height="${H + 1}" viewBox="0 0 ${W} ${H + 1}" role="img">
+      <g stroke="var(--line)" stroke-width="1" shape-rendering="crispEdges">${lines}</g>${body}</svg>`;
+    container.scrollLeft = container.scrollWidth;
+  }
+
+  const ring = (cx, cy, r, color, sw) => `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}" stroke-width="${sw}"/>`;
+  const dot = (cx, cy, r, color) => `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${color}"/>`;
+  const slash = (cx, cy, r, color, sw) => `<line x1="${cx - r}" y1="${cy + r}" x2="${cx + r}" y2="${cy - r}" stroke="${color}" stroke-width="${sw}" stroke-linecap="round"/>`;
+
+  function drawBig(cols, leadTies) {
+    const el = document.getElementById('bigRoad');
+    const s = 22;
+    const cells = place(cols);
+    let body = '', maxX = -1;
+    for (const { x, y, it } of cells) {
+      maxX = Math.max(maxX, x);
+      const cx = x * s + s / 2, cy = y * s + s / 2;
+      body += ring(cx, cy, s / 2 - 3.5, colorOf(it.r), 2.6);
+      if (it.ties) {
+        body += slash(cx, cy, s / 2 - 5, 'var(--tie)', 2.2);
+        if (it.ties > 1) body += `<text x="${cx}" y="${cy + 3.5}" text-anchor="middle" font-size="10" font-weight="600" font-family="var(--font-num)" fill="var(--fg)">${it.ties}</text>`;
+      }
+      if (it.bp) body += dot(x * s + 4.5, y * s + 4.5, 2.6, 'var(--banker)');
+      if (it.pp) body += dot(x * s + s - 4.5, y * s + s - 4.5, 2.6, 'var(--player)');
+    }
+    if (leadTies) body += slash(s / 2, s / 2, s / 2 - 5, 'var(--tie)', 2.2);
+    grid(el, s, maxX + 1, body);
+    const longest = cols.reduce((m, c) => Math.max(m, c.length), 0);
+    const cur = cols[cols.length - 1];
+    document.getElementById('bigInfo').textContent = cur ? `現在 ${cur[0].r === 'B' ? 'B' : 'P'}${cur.length}連 ・ 最長 ${longest}連` : '';
+  }
+
+  function drawBead(hands) {
+    const el = document.getElementById('beadRoad');
+    const s = 26;
+    let body = '';
+    const label = { B: '庄', P: '闲', T: '和' };
+    hands.forEach((h, i) => {
+      const x = Math.floor(i / ROWS), y = i % ROWS;
+      const cx = x * s + s / 2, cy = y * s + s / 2;
+      body += dot(cx, cy, s / 2 - 2.5, colorOf(h.r));
+      body += `<text x="${cx}" y="${cy + 4.5}" text-anchor="middle" font-size="12.5" font-weight="700" fill="#fff" font-family="var(--font-ui)">${label[h.r]}</text>`;
+      if (h.bp) body += `<circle cx="${x * s + 5}" cy="${y * s + 5}" r="3" fill="var(--banker)" stroke="var(--sheet)" stroke-width="1.2"/>`;
+      if (h.pp) body += `<circle cx="${x * s + s - 5}" cy="${y * s + s - 5}" r="3" fill="var(--player)" stroke="var(--sheet)" stroke-width="1.2"/>`;
+    });
+    grid(el, s, Math.ceil(hands.length / ROWS), body);
+  }
+
+  const markShape = {
+    1: (cx, cy, s, c) => ring(cx, cy, s / 2 - 2.2, c, 1.8),
+    2: (cx, cy, s, c) => dot(cx, cy, s / 2 - 2.2, c),
+    3: (cx, cy, s, c) => slash(cx, cy, s / 2 - 2.6, c, 2),
+  };
+
+  function drawDerived(id, cols, k) {
+    const el = document.getElementById(id);
+    const s = 13;
+    const marks = derivedMarks(cols, k).map(m => ({ m }));
+    const cells = place(toColumns(marks, o => o.m));
+    let body = '', maxX = -1;
+    for (const { x, y, it } of cells) {
+      maxX = Math.max(maxX, x);
+      body += markShape[k](x * s + s / 2, y * s + s / 2, s, it.m === 'R' ? 'var(--banker)' : 'var(--player)');
+    }
+    grid(el, s, maxX + 1, body);
+  }
+
+  function miniIcon(k, m) {
+    if (!m) return '';
+    const c = m === 'R' ? 'var(--banker)' : 'var(--player)';
+    return `<svg width="16" height="16" viewBox="0 0 16 16" aria-label="${['', '大眼仔', '小路', '曱甴路'][k]} ${m === 'R' ? '赤' : '青'}">${markShape[k](8, 8, 16, c)}</svg>`;
+  }
+
+  function drawAsk(hands) {
+    for (const r of ['B', 'P']) {
+      const icons = [1, 2, 3].map(k => miniIcon(k, nextMark(hands, k, r))).join('');
+      document.getElementById('ask' + r).innerHTML = icons || '<span class="none">まだ出ません</span>';
+    }
+  }
+
+  function drawStats(hands) {
+    const n = hands.length;
+    const c = { B: 0, P: 0, T: 0, bp: 0, pp: 0 };
+    hands.forEach(h => { c[h.r]++; if (h.bp) c.bp++; if (h.pp) c.pp++; });
+    const pct = v => n ? Math.round(v / n * 100) + '%' : '–';
+    document.getElementById('stats').innerHTML = `
+      <div class="stat b"><b>${c.B}</b><span>バンカー</span> <small>${pct(c.B)}</small></div>
+      <div class="stat p"><b>${c.P}</b><span>プレイヤー</span> <small>${pct(c.P)}</small></div>
+      <div class="stat t"><b>${c.T}</b><span>タイ</span> <small>${pct(c.T)}</small></div>
+      <div class="stat b"><b>${c.bp}</b><span>Bペア</span></div>
+      <div class="stat p"><b>${c.pp}</b><span>Pペア</span></div>`;
+    document.getElementById('handNo').textContent = `${n} 手`;
+  }
+
+  function render() {
+    const hands = state.hands;
+    const { cols, leadTies } = bigRoadColumns(hands);
+    drawStats(hands);
+    drawBig(cols, leadTies);
+    drawBead(hands);
+    drawDerived('eyeRoad', cols, 1);
+    drawDerived('smallRoad', cols, 2);
+    drawDerived('roachRoad', cols, 3);
+    drawAsk(hands);
+    document.getElementById('sampleNote').hidden = !state.sample;
+    document.getElementById('btnBP').setAttribute('aria-pressed', pairs.bp);
+    document.getElementById('btnPP').setAttribute('aria-pressed', pairs.pp);
+  }
+
+  // ---- input ----
+
+  function add(r) {
+    if (state.sample) state = { hands: [], sample: false };
+    state.hands.push({ r, bp: pairs.bp, pp: pairs.pp });
+    pairs = { bp: false, pp: false };
+    save(); render();
+  }
+  document.getElementById('btnB').onclick = () => add('B');
+  document.getElementById('btnP').onclick = () => add('P');
+  document.getElementById('btnT').onclick = () => add('T');
+  document.getElementById('btnBP').onclick = () => { pairs.bp = !pairs.bp; render(); };
+  document.getElementById('btnPP').onclick = () => { pairs.pp = !pairs.pp; render(); };
+  document.getElementById('btnUndo').onclick = () => {
+    if (state.sample) return;
+    state.hands.pop(); save(); render();
+  };
+
+  const newBtn = document.getElementById('btnNew');
+  let armTimer = null;
+  newBtn.onclick = () => {
+    if (!newBtn.classList.contains('arm')) {
+      newBtn.classList.add('arm'); newBtn.textContent = 'もう一度で消去';
+      armTimer = setTimeout(disarm, 3000);
+      return;
+    }
+    disarm();
+    state = { hands: [], sample: false }; pairs = { bp: false, pp: false };
+    save(); render();
+  };
+  function disarm() { clearTimeout(armTimer); newBtn.classList.remove('arm'); newBtn.textContent = '新シュー'; }
+
+  let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(render, 150); });
+  render();
+})();
+</script>
+<script>
+if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+</script>
+</body>
+</html>
