@@ -11,10 +11,17 @@ struct DealerView: View {
             if chips.role == .host, chips.table != nil {
                 DealerTableView(shoe: shoe, chips: chips)
             } else {
-                DealerSetupView(chips: chips)
+                DealerSetupView(chips: chips) {
+                    // 新しいテーブルは空の罫線から始める（いまのシューは「過去のシュー」へ、例のシューは捨てる）
+                    shoe.startNewShoe()
+                }
             }
         }
         .modifier(ChipNoticeAlert(store: chips))
+        // テーブルを終えたら、そのテーブルの罫線を「過去のシュー」に回す（罫線だけに戻っても続きにならない）
+        .onChange(of: chips.table == nil) { _, ended in
+            if ended, !shoe.current.hands.isEmpty { shoe.startNewShoe() }
+        }
     }
 }
 
@@ -22,6 +29,8 @@ struct DealerView: View {
 
 private struct DealerSetupView: View {
     @Bindable var chips: ChipStore
+    /// テーブルを作る直前に呼ぶ（罫線を空にする）
+    let onCreate: () -> Void
     @State private var tableName = ""
     @State private var startingChips = 10000
     /// 持ち点を候補から選ばず、自分で入れる
@@ -178,6 +187,7 @@ private struct DealerSetupView: View {
 
     private func create() {
         focused = false
+        onCreate()
         chips.createTable(name: finalTableName, startingChips: max(1, startingChips),
                           hostPlays: hostBets, bankerCommission: bankerCommission,
                           minBet: chosenLimits.min, maxBet: chosenLimits.max)
