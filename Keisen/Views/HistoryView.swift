@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct HistoryView: View {
-    @Environment(ShoeStore.self) private var store
+    let store: ShoeStore
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -16,7 +16,7 @@ struct HistoryView: View {
                 } else {
                     List {
                         ForEach(store.archive) { shoe in
-                            NavigationLink(value: shoe) { ShoeRow(shoe: shoe) }
+                            NavigationLink(value: shoe) { ShoeRow(game: store.game, shoe: shoe) }
                         }
                         .onDelete { store.deleteArchived(at: $0) }
                     }
@@ -27,8 +27,8 @@ struct HistoryView: View {
             .navigationDestination(for: Shoe.self) { shoe in
                 ScrollView {
                     VStack(spacing: 10) {
-                        StatsBar(shoe: shoe)
-                        RoadsBoard(hands: shoe.hands)
+                        StatsBar(game: store.game, shoe: shoe)
+                        RoadsBoard(game: store.game, hands: shoe.hands)
                     }
                     .padding(12)
                 }
@@ -46,6 +46,7 @@ struct HistoryView: View {
 }
 
 private struct ShoeRow: View {
+    let game: RoadGame
     let shoe: Shoe
 
     var body: some View {
@@ -54,9 +55,9 @@ private struct ShoeRow: View {
             Text(shoe.startedAt.formatted(date: .abbreviated, time: .shortened)).font(.subheadline.bold())
             HStack(spacing: 10) {
                 Text("\(shoe.hands.count)手").foregroundStyle(.secondary)
-                Text("B \(c.banker)").foregroundStyle(Theme.banker)
-                Text("P \(c.player)").foregroundStyle(Theme.player)
-                Text("T \(c.tie)").foregroundStyle(Theme.tie)
+                Text("\(game.letter(.banker)) \(c.banker)").foregroundStyle(Theme.banker)
+                Text("\(game.letter(.player)) \(c.player)").foregroundStyle(Theme.player)
+                Text("\(game.letter(.tie)) \(c.tie)").foregroundStyle(Theme.tie)
             }
             .font(.caption.monospacedDigit())
         }

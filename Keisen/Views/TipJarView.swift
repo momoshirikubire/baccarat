@@ -89,3 +89,24 @@ struct TipJarView: View {
         }
     }
 }
+
+/// どの画面の右上にも置く「応援する」ボタン
+struct TipButton: ViewModifier {
+    @State private var showTips = false
+
+    func body(content: Content) -> some View {
+        content
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { showTips = true } label: {
+                        Label("応援する", systemImage: "heart")
+                    }
+                }
+            }
+            .sheet(isPresented: $showTips) { TipJarView() }
+    }
+}
+
+extension View {
+    func tipButton() -> some View { modifier(TipButton()) }
+}

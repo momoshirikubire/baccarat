@@ -14,20 +14,20 @@ final class ShoeStore {
         var isSample: Bool
     }
 
-    private static let fileURL: URL = {
-        let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        return dir.appendingPathComponent("shoes.json")
-    }()
+    let game: RoadGame
+    @ObservationIgnored private let fileURL: URL
 
-    init() {
-        if let data = try? Data(contentsOf: Self.fileURL),
+    init(game: RoadGame) {
+        self.game = game
+        let fileURL = FileStore.url(game.fileName)
+        self.fileURL = fileURL
+        if let data = try? Data(contentsOf: fileURL),
            let saved = try? JSONDecoder().decode(Saved.self, from: data) {
             current = saved.current
             archive = saved.archive
             isSample = saved.isSample
         } else {
-            current = .sample
+            current = .sample(pairs: game.hasPairs)
             archive = []
             isSample = true
         }
@@ -68,6 +68,6 @@ final class ShoeStore {
     private func save() {
         let saved = Saved(current: current, archive: archive, isSample: isSample)
         guard let data = try? JSONEncoder().encode(saved) else { return }
-        try? data.write(to: Self.fileURL, options: .atomic)
+        try? data.write(to: fileURL, options: .atomic)
     }
 }

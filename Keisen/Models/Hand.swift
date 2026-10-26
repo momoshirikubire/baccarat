@@ -4,23 +4,6 @@ enum Outcome: String, Codable, CaseIterable {
     case banker = "B"
     case player = "P"
     case tie = "T"
-
-    var name: String {
-        switch self {
-        case .banker: "バンカー"
-        case .player: "プレイヤー"
-        case .tie: "タイ"
-        }
-    }
-
-    /// 珠盤路に書く一文字
-    var bead: String {
-        switch self {
-        case .banker: "庄"
-        case .player: "闲"
-        case .tie: "和"
-        }
-    }
 }
 
 struct Hand: Codable, Hashable {
@@ -49,11 +32,69 @@ struct Shoe: Codable, Identifiable, Hashable {
     }
 
     /// 初回起動時に見せる例のシュー
-    static var sample: Shoe {
+    static func sample(pairs: Bool) -> Shoe {
         let seq = Array("BBPTPPPBBBBPBPPTPBBBPPPPPPPBPBBTBPPBBPB")
         let hands = seq.enumerated().map { i, ch in
-            Hand(outcome: Outcome(rawValue: String(ch)) ?? .banker, bankerPair: i == 5, playerPair: i == 17)
+            Hand(outcome: Outcome(rawValue: String(ch)) ?? .banker, bankerPair: pairs && i == 5, playerPair: pairs && i == 17)
         }
         return Shoe(hands: hands)
+    }
+}
+
+/// 罫線を使うゲーム。ドラゴンタイガーはバカラと同じ罫線で、バンカーの位置にドラゴン、プレイヤーの位置にタイガーが入る。
+enum RoadGame: String, CaseIterable, Identifiable {
+    case baccarat
+    case dragonTiger
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .baccarat: "バカラ"
+        case .dragonTiger: "ドラゴンタイガー"
+        }
+    }
+
+    var hasPairs: Bool { self == .baccarat }
+
+    /// 保存先。バカラは 1.0 からのファイル名のまま。
+    var fileName: String {
+        switch self {
+        case .baccarat: "shoes.json"
+        case .dragonTiger: "dragon-tiger.json"
+        }
+    }
+
+    func name(_ outcome: Outcome) -> String {
+        switch (self, outcome) {
+        case (_, .tie): "タイ"
+        case (.baccarat, .banker): "バンカー"
+        case (.baccarat, .player): "プレイヤー"
+        case (.dragonTiger, .banker): "ドラゴン"
+        case (.dragonTiger, .player): "タイガー"
+        }
+    }
+
+    /// 罫線や集計に出す1文字
+    func letter(_ outcome: Outcome) -> String {
+        switch (self, outcome) {
+        case (.baccarat, .tie): "T"
+        case (.dragonTiger, .tie): "和"
+        case (.baccarat, .banker): "B"
+        case (.baccarat, .player): "P"
+        case (.dragonTiger, .banker): "D"
+        case (.dragonTiger, .player): "T"
+        }
+    }
+
+    /// 珠盤路に書く一文字
+    func bead(_ outcome: Outcome) -> String {
+        switch (self, outcome) {
+        case (_, .tie): "和"
+        case (.baccarat, .banker): "庄"
+        case (.baccarat, .player): "闲"
+        case (.dragonTiger, .banker): "龍"
+        case (.dragonTiger, .player): "虎"
+        }
     }
 }
