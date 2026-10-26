@@ -96,17 +96,21 @@ struct DeveloperNote: View {
                     .clipShape(Circle())
                     .overlay(Circle().stroke(Theme.line))
                     .accessibilityHidden(true)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("桃尻くびれちゃんが、ひとりで作っています").font(.subheadline.bold())
-                    // SNS のプロフィールだけにつなぐ（投げ銭などアプリの外での支払いには案内しない）
-                    Link("Instagram @momoshiri_kubire", destination: URL(string: "https://www.instagram.com/momoshiri_kubire/")!)
-                        .font(.caption)
-                }
+                Text("桃尻くびれちゃんが、ひとりで作っています").font(.subheadline.bold())
             }
             Text("登録料も端末も自費で、広告なしで続けています。気に入ったら応援してもらえるとうれしいです。チップを送らなくても、すべての機能を使えます。")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
+            // SNS のプロフィールだけにつなぐ（投げ銭などアプリの外での支払いには案内しない）
+            Link(destination: URL(string: "https://www.instagram.com/momoshiri_kubire/")!) {
+                Label("Instagram を見る　@momoshiri_kubire", systemImage: "camera.fill")
+                    .font(.footnote.bold())
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .buttonBorderShape(.capsule)
+            .tint(Color(red: 0.88, green: 0.19, blue: 0.47))
         }
     }
 }
