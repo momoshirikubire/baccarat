@@ -11,6 +11,11 @@ struct RoadGameView: View {
     @State private var playerPair = false
     @State private var confirmNewShoe = false
     @State private var showHistory = false
+    @State private var showNudge = false
+    @State private var showTips = false
+    @Environment(TipStore.self) private var tips
+    /// 「新しいシュー」を押した回数（応援のお願いを出す間かくに使う）
+    @AppStorage("newShoeCount") private var newShoeCount = 0
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     /// 珠盤路・下三路・問路も出すか（はじめは大路だけ）
     @AppStorage("showAllRoads") private var showAllRoads = false
@@ -49,7 +54,7 @@ struct RoadGameView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button { showHistory = true } label: {
-                        Label("過去のシュー", systemImage: "clock.arrow.circlepath")
+                        Label("履歴", systemImage: "clock.arrow.circlepath").labelStyle(.titleAndIcon)
                     }
                 }
                 if let modeButton {
@@ -72,12 +77,12 @@ struct RoadGameView: View {
                             Toggle("結果を大きく出して読み上げる", isOn: $announceResults)
                         }
                     } label: {
-                        Label("表示の設定", systemImage: "slider.horizontal.3")
+                        Label("表示", systemImage: "slider.horizontal.3").labelStyle(.titleAndIcon)
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { confirmNewShoe = true } label: {
-                        Label("新しいシュー", systemImage: "plus.square.on.square")
+                        Label("新しいシュー", systemImage: "plus.rectangle.on.rectangle").labelStyle(.titleAndIcon)
                     }
                 }
             }
@@ -85,6 +90,7 @@ struct RoadGameView: View {
             .confirmationDialog("新しいシューを始めますか？", isPresented: $confirmNewShoe, titleVisibility: .visible) {
                 Button("新しいシューを始める") {
                     store.startNewShoe()
+                    maybeNudge()
                     bankerPair = false
                     playerPair = false
                 }
@@ -95,7 +101,23 @@ struct RoadGameView: View {
                      : "いまのシューは「過去のシュー」に残ります。")
             }
             .sheet(isPresented: $showHistory) { HistoryView(store: store) }
+            .alert("罫線ノートを応援しませんか？", isPresented: $showNudge) {
+                Button("応援する") { showTips = true }
+                Button("あとで", role: .cancel) {}
+            } message: {
+                Text("広告なしで使い続けられるように、よければチップで応援してください。チップを送っても機能は変わりません。")
+            }
+            .sheet(isPresented: $showTips) { TipJarView() }
         }
+    }
+
+    /// 新しいシューを2回始めるごとに、応援のお願いを出す（「あとで」の1タップで閉じる）。
+    /// 応援してくれた人には、最後のチップから1年たつまで出さない。
+    private func maybeNudge() {
+        newShoeCount += 1
+        guard newShoeCount % 2 == 0, !tips.tippedWithinYear else { return }
+        // 確認のダイアログが閉じきってから出す
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { showNudge = true }
     }
 
     private func board(scale: CGFloat, fitCell: CGFloat? = nil) -> some View {
