@@ -224,30 +224,34 @@ struct BetPad: View {
                 figure("ベット中", staked)
                 figure("使える", balance - staked)
             }
-            HStack(spacing: 6) {
-                spotButton(.banker, height: compact ? 48 : 64)
-                spotButton(.tie, height: compact ? 48 : 64).frame(maxWidth: compact ? 64 : 84)
-                spotButton(.player, height: compact ? 48 : 64)
-            }
-            HStack(spacing: 6) {
-                spotButton(.bankerPair, height: compact ? 32 : 40)
-                spotButton(.playerPair, height: compact ? 32 : 40)
-            }
-            HStack(spacing: 6) {
-                ForEach(Self.steps, id: \.self) { step in
-                    let current = spots[selected] ?? 0
-                    let next = clamp(current + step)
-                    padButton("+\(step)") { change(selected, to: next) }
-                        .disabled(next <= current || balance - staked < next - current)
+            Group {
+                HStack(spacing: 6) {
+                    spotButton(.banker, height: compact ? 48 : 64)
+                    spotButton(.tie, height: compact ? 48 : 64).frame(maxWidth: compact ? 64 : 84)
+                    spotButton(.player, height: compact ? 48 : 64)
                 }
-                padButton("0") { change(selected, to: 0) }
+                HStack(spacing: 6) {
+                    spotButton(.bankerPair, height: compact ? 32 : 40)
+                    spotButton(.playerPair, height: compact ? 32 : 40)
+                }
+                HStack(spacing: 6) {
+                    ForEach(Self.steps, id: \.self) { step in
+                        let current = spots[selected] ?? 0
+                        let next = clamp(current + step)
+                        padButton("+\(step)") { change(selected, to: next) }
+                            .disabled(next <= current || balance - staked < next - current)
+                    }
+                    padButton("0") { change(selected, to: 0) }
+                }
+                HStack(spacing: 6) {
+                    padButton("前の手と同じ") { set(previous ?? [:]) }
+                        .disabled(previous?.isEmpty ?? true)
+                    padButton("ベットを消す") { set([:]) }
+                        .disabled(spots.isEmpty)
+                }
             }
-            HStack(spacing: 6) {
-                padButton("前の手と同じ") { set(previous ?? [:]) }
-                    .disabled(previous?.isEmpty ?? true)
-                padButton("ベットを消す") { set([:]) }
-                    .disabled(spots.isEmpty)
-            }
+            // 締め切り中は薄くして、押せないことが分かるようにする
+            .opacity(closed ? 0.4 : 1)
         }
         .foregroundStyle(Theme.deckInk)
         .disabled(closed)

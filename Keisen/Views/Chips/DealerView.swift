@@ -206,7 +206,6 @@ private struct DealerTableView: View {
                     .frame(maxHeight: .infinity, alignment: .bottom)
                     .background(Theme.deck.ignoresSafeArea())
                 }
-                .clipped()
             // 参加者の帯はツールバーのすぐ下に固定する（中身が高くなっても重ならない）
             .safeAreaInset(edge: .top, spacing: 0) {
                 if let table = chips.table { band(table) }
