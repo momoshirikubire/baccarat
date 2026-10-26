@@ -42,9 +42,12 @@ struct RoadGrid: View {
         let height = CGFloat(Roads.rows) * cellSize
         GeometryReader { geo in
             let columns = max(usedColumns + 3, Int((geo.size.width / cellSize).rounded(.up)))
+            // 画面に収まるうちは左端に合わせる（端数ぶん右へずれて1列目が切れないように）
+            let target = usedColumns + 3 <= Int(geo.size.width / cellSize) ? "start" : "end"
             ScrollViewReader { proxy in
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 0) {
+                        Color.clear.frame(width: 0, height: 1).id("start")
                         Canvas { ctx, size in
                             var lines = Path()
                             for i in 0...columns {
@@ -64,8 +67,8 @@ struct RoadGrid: View {
                         Color.clear.frame(width: 1, height: 1).id("end")
                     }
                 }
-                .onAppear { proxy.scrollTo("end", anchor: .trailing) }
-                .onChange(of: usedColumns) { proxy.scrollTo("end", anchor: .trailing) }
+                .onAppear { proxy.scrollTo(target, anchor: target == "start" ? .leading : .trailing) }
+                .onChange(of: usedColumns) { proxy.scrollTo(target, anchor: target == "start" ? .leading : .trailing) }
             }
         }
         .frame(height: height)
