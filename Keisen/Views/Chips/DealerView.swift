@@ -23,7 +23,7 @@ struct DealerView: View {
 private struct DealerSetupView: View {
     @Bindable var chips: ChipStore
     @State private var tableName = ""
-    @State private var startingChips = 1000
+    @State private var startingChips = 10000
     /// 持ち点を候補から選ばず、自分で入れる
     @State private var customChips = false
     @State private var bankerCommission = false
@@ -36,7 +36,7 @@ private struct DealerSetupView: View {
     @State private var showPast = false
     @FocusState private var focused: Bool
 
-    private static let chipChoices = [500, 1000, 5000, 10000]
+    private static let chipChoices = [10000, 30000, 50000, 100000]
 
     var body: some View {
         NavigationStack {
@@ -452,7 +452,8 @@ private struct DealerTableView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             BetPad(spots: table.bets[me.id] ?? [:], balance: me.balance, commission: table.bankerCommission,
                    previous: table.lastRound?.bets[me.id],
-                   minBet: table.minBet, maxBet: table.maxBet, compact: true, closed: table.betsClosed) { spots in
+                   minBet: table.minBet, maxBet: table.maxBet, startingChips: table.startingChips,
+                   compact: true, closed: table.betsClosed) { spots in
                 chips.placeBet(spots, for: me.id)
             }
         }

@@ -156,7 +156,8 @@ struct BetSheet: View {
                 }
                 BetPad(spots: spots, balance: member.balance, commission: table.bankerCommission,
                        previous: table.lastRound?.bets[member.id],
-                       minBet: table.minBet, maxBet: table.maxBet, closed: table.betsClosed) { spots = $0 }
+                       minBet: table.minBet, maxBet: table.maxBet, startingChips: table.startingChips,
+                       closed: table.betsClosed) { spots = $0 }
                     .padding(16)
                     .background(Theme.deck, in: RoundedRectangle(cornerRadius: 16))
                     .padding(.horizontal, 16)
@@ -194,6 +195,8 @@ struct BetPad: View {
     /// 1か所あたりの下限・上限（0 は「なし」）
     var minBet = 0
     var maxBet = 0
+    /// テーブルのはじめの持ち点（+100 などの段階を合わせる）
+    var startingChips = 1000
     /// 記録係の画面の横に並べるときは、ボタンを低くする
     var compact = false
     /// 締め切り中は押せなくする
@@ -201,7 +204,16 @@ struct BetPad: View {
     let onChange: ([BetSpot: Int]) -> Void
     @State private var selected: BetSpot = .banker
 
-    private static let steps = [10, 50, 100, 500]
+    /// 持ち点の 1/100・1/20・1/10・1/2 をきりのいい数に（持ち点 1,000 なら +10 / +50 / +100 / +500、10,000 なら +100 / +500 / +1,000 / +5,000）
+    private var steps: [Int] {
+        let s = Double(max(1, startingChips))
+        var list: [Int] = []
+        for r in [0.01, 0.05, 0.1, 0.5] {
+            let v = BetLimitPreset.nice(s * r)
+            if !list.contains(v) { list.append(v) }
+        }
+        return list
+    }
 
     var body: some View {
         let staked = spots.values.reduce(0, +)
@@ -235,10 +247,10 @@ struct BetPad: View {
                     spotButton(.playerPair, height: compact ? 32 : 40)
                 }
                 HStack(spacing: 6) {
-                    ForEach(Self.steps, id: \.self) { step in
+                    ForEach(steps, id: \.self) { step in
                         let current = spots[selected] ?? 0
                         let next = clamp(current + step)
-                        padButton("+\(step)") { change(selected, to: next) }
+                        padButton("+\(step.formatted())") { change(selected, to: next) }
                             .disabled(next <= current || balance - staked < next - current)
                     }
                     padButton("0") { change(selected, to: 0) }

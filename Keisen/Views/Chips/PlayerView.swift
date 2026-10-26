@@ -122,6 +122,7 @@ private struct PlayerTableView: View {
                         BetPad(spots: draft, balance: balance, commission: table?.bankerCommission ?? false,
                                previous: table?.lastRound?.bets[chips.myID],
                                minBet: table?.minBet ?? 0, maxBet: table?.maxBet ?? 0,
+                               startingChips: table?.startingChips ?? 1000,
                                // お願いのボタンが出ているあいだは、高さに収まるようにボタンを低くする
                                compact: table.map { needsRebuy($0, balance: balance) } ?? false,
                                closed: table?.betsClosed ?? false) { spots in
