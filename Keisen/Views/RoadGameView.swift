@@ -3,6 +3,8 @@ import SwiftUI
 /// バカラ・ドラゴンタイガーの罫線画面
 struct RoadGameView: View {
     let store: ShoeStore
+    /// 使い方を変えるボタン（罫線だけのモードで左上に出す）
+    var modeButton: ModeButton? = nil
     @State private var bankerPair = false
     @State private var playerPair = false
     @State private var confirmNewShoe = false
@@ -17,9 +19,12 @@ struct RoadGameView: View {
     /// 珠盤路・下三路・問路も出すか（はじめは大路だけ）
     @AppStorage("roads.showAll") private var showAllRoads = false
     @AppStorage("tieStyle") private var tieStyle: TieStyle = .dot
+    /// 結果を記録したら大きく出して読み上げる（ResultSplash.swift、はじめはオン）
+    @AppStorage(ResultAnnouncement.storageKey) private var announceResults = true
+    @State private var announcement: ResultAnnouncement?
 
     private var game: RoadGame { store.game }
-    private var title: String { "\(game.title)・\(store.current.hands.count) 手" }
+    private var title: String { "\(store.current.hands.count) 手" }
 
     /// iPhone を横にしたとき（高さが詰まる）は、罫線を大きくして入力盤を右に置く
     private var isLandscape: Bool { verticalSizeClass == .compact }
@@ -51,6 +56,10 @@ struct RoadGameView: View {
             .navigationTitle(isLandscape ? "" : title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                // 使い方はいつでも見えるように、いちばん左に置く
+                if let modeButton {
+                    ToolbarItem(placement: .topBarLeading) { modeButton }
+                }
                 ToolbarItem(placement: .topBarLeading) {
                     Button { showHistory = true } label: {
                         ToolbarTitle("履歴", systemImage: "clock.arrow.circlepath")
@@ -62,6 +71,7 @@ struct RoadGameView: View {
                     }
                 }
                 if isLandscape {
+                    // ボタンが入りきるように、横向きでは手の数だけを短く出す
                     ToolbarItem(placement: .topBarLeading) {
                         Text(title).font(.headline).fixedSize()
                     }
@@ -74,6 +84,7 @@ struct RoadGameView: View {
                         }
                         .pickerStyle(.menu)
                         Toggle("珠盤路・下三路・問路も見る", isOn: $showAllRoads)
+                        Toggle("結果を大きく出して読み上げる", isOn: $announceResults)
                     } label: {
                         ToolbarTitle("表示", systemImage: "slider.horizontal.3")
                     }
@@ -108,6 +119,7 @@ struct RoadGameView: View {
             .sheet(isPresented: $showTips) { TipJarView() }
             .sheet(isPresented: $showRules) { RulesView() }
         }
+        .resultSplash($announcement)
     }
 
     /// 新しいシューを2回始めるごとに、応援のお願いを出す（「あとで」の1タップで閉じる）。
@@ -154,6 +166,13 @@ struct RoadGameView: View {
     }
 
     private func deck(side: Bool) -> some View {
+        VStack(spacing: 0) {
+            if side { Spacer(minLength: 0) }
+            inputDeck(side: side)
+        }
+    }
+
+    private func inputDeck(side: Bool) -> some View {
         InputDeck(
             game: game,
             hands: store.current.hands,
@@ -168,6 +187,12 @@ struct RoadGameView: View {
                 store.record(outcome, bankerPair: bankerPair, playerPair: playerPair)
                 bankerPair = false
                 playerPair = false
+                if announceResults, let hand = store.current.hands.last {
+                    withAnimation(.easeOut(duration: 0.15)) {
+                        announcement = ResultAnnouncement(hand: hand, handNumber: store.current.hands.count)
+                    }
+                    ResultVoice.speak(hand)
+                }
             },
             onUndo: { store.undo() }
         )
@@ -186,6 +211,8 @@ struct InputDeck: View {
     var showAsk = true
     /// 横向きで大路だけのときは細い列にする。集計をここに出し、結果のボタンは縦に並べる
     var narrowShoe: Shoe? = nil
+    /// ペアと「1つ戻す」のボタンの高さ（親の画面では押しやすいように高くする）
+    var smallButtonHeight: CGFloat = 38
     var isSample = false
     let onResult: (Outcome) -> Void
     let onUndo: () -> Void
@@ -265,7 +292,7 @@ struct InputDeck: View {
             Label("1つ戻す", systemImage: "arrow.uturn.backward")
                 .labelStyle(.titleAndIcon)
                 .font(.footnote.bold())
-                .frame(maxWidth: .infinity, minHeight: 38)
+                .frame(maxWidth: .infinity, minHeight: smallButtonHeight)
                 .background(Theme.deckButton, in: RoundedRectangle(cornerRadius: 10))
         }
         .disabled(!canUndo)
@@ -312,7 +339,7 @@ struct InputDeck: View {
             Text(title)
                 .font(.footnote.bold())
                 .foregroundStyle(isOn.wrappedValue ? .white : Theme.deckInk)
-                .frame(maxWidth: .infinity, minHeight: 38)
+                .frame(maxWidth: .infinity, minHeight: smallButtonHeight)
                 .background(isOn.wrappedValue ? color : Theme.deckButton, in: RoundedRectangle(cornerRadius: 10))
         }
         .accessibilityAddTraits(isOn.wrappedValue ? .isSelected : [])

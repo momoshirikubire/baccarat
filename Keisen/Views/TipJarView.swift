@@ -9,14 +9,8 @@ struct TipJarView: View {
         NavigationStack {
             List {
                 Section {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("広告なしで使い続けられるように")
-                            .font(.headline)
-                        Text("バカラノートは広告を出さず、すべての機能を無料で使えます。気に入ったら、開発の応援としてチップを送ってもらえるとうれしいです。チップを送っても機能は変わりません。")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(.vertical, 4)
+                    DeveloperNote()
+                        .padding(.vertical, 4)
                 }
 
                 Section("チップを送る") {
@@ -87,6 +81,53 @@ struct TipJarView: View {
             .task { await tips.load() }
             .onDisappear { if tips.phase != .idle { tips.phase = .idle } }
         }
+    }
+}
+
+/// 応援画面のいちばん上に出す、作っている人からのひとこと
+struct DeveloperNote: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 10) {
+                Image("DeveloperIcon")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 44, height: 44)
+                    .clipShape(Circle())
+                    .overlay(Circle().stroke(Theme.line))
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("広告なしで続けたい！").font(.headline)
+                    Text("作った人：桃尻くびれちゃん").font(.caption).foregroundStyle(.secondary)
+                }
+            }
+            Text("画面をすっきり使ってほしくて、広告は入れていません。App Store の登録料は毎年自費なので、応援してもらえると、続ける力と次のアップデートの力になります🍑")
+                .font(.subheadline)
+                .fixedSize(horizontal: false, vertical: true)
+            Text("チップを送らなくても、すべての機能を使えます。")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            // SNS のプロフィールだけにつなぐ（投げ銭などアプリの外での支払いには案内しない）
+            HStack(spacing: 8) {
+                snsButton("Instagram", systemImage: "camera.fill",
+                          url: "https://www.instagram.com/momoshiri_kubire/",
+                          color: Color(red: 0.88, green: 0.19, blue: 0.47))
+                snsButton("TikTok", systemImage: "music.note",
+                          url: "https://www.tiktok.com/@momoshiri_kubire",
+                          color: .black)
+            }
+        }
+    }
+
+    private func snsButton(_ title: String, systemImage: String, url: String, color: Color) -> some View {
+        Link(destination: URL(string: url)!) {
+            Label(title, systemImage: systemImage)
+                .font(.footnote.bold())
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.borderedProminent)
+        .buttonBorderShape(.capsule)
+        .tint(color)
     }
 }
 

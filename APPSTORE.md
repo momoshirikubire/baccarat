@@ -67,6 +67,7 @@ YAHHO と同じ流れ：
 - ホーム画面の名前（アプリ側の CFBundleDisplayName）：バカラノート
 - カテゴリ：ユーティリティ（サブ：エンターテインメント）
 - 年齢区分：18+
+- 配信国：日本のみ（2026-10-26 に設定。EU のデジタルサービス法でトレーダー扱いになるのを避けるためと、中国本土の登録番号の問題のため。DSA の申告は「トレーダーではない」）
 - サポート URL：https://momoshirikubire.github.io/baccarat/support.html
 - プライバシーポリシー URL：https://momoshirikubire.github.io/baccarat/privacy.html
   （GitHub の Settings → Pages で、ブランチ main・フォルダ /docs を公開しておくこと）
