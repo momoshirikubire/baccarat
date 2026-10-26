@@ -9,14 +9,8 @@ struct TipJarView: View {
         NavigationStack {
             List {
                 Section {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("広告なしで使い続けられるように")
-                            .font(.headline)
-                        Text("バカラノートは広告を出さず、すべての機能を無料で使えます。気に入ったら、開発の応援としてチップを送ってもらえるとうれしいです。チップを送っても機能は変わりません。")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(.vertical, 4)
+                    DeveloperNote()
+                        .padding(.vertical, 4)
                 }
 
                 Section("チップを送る") {
@@ -87,6 +81,30 @@ struct TipJarView: View {
             .task { await tips.load() }
             .onDisappear { if tips.phase != .idle { tips.phase = .idle } }
         }
+    }
+}
+
+/// 応援画面のいちばん上に出す、作っている人からのひとこと
+struct DeveloperNote: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 10) {
+                Image(systemName: "person.crop.circle.fill")
+                    .font(.system(size: 36))
+                    .foregroundStyle(Theme.banker.opacity(0.8))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("ひとりで作っています").font(.headline)
+                    Text("作った人：桃尻くびれちゃん").font(.caption).foregroundStyle(.secondary)
+                }
+            }
+            Text("はじめまして、バカラノートを作っている桃尻くびれちゃんです。ふだんは筋トレの発信をしながら、ひとりでアプリを作っています。もともとは、自分がテーブルで使いたくて作りました。")
+            Text("App Store に出すための年間の登録料やテスト用の端末は、ぜんぶ自費です。画面をすっきり使ってほしいので、広告は入れていません。気に入ってもらえたら、応援してもらえるとすごくうれしいです。")
+            Text("チップを送らなくても、すべての機能を使えます。チップを送っても機能は変わりません。")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .font(.subheadline)
+        .fixedSize(horizontal: false, vertical: true)
     }
 }
 
