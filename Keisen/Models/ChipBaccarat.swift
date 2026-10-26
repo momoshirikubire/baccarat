@@ -7,9 +7,28 @@ extension ChipTable {
     func problem(withBet spots: [BetSpot: Int], for id: UUID) -> String? {
         guard let m = member(id) else { return "参加者が見つかりません。" }
         if spots.values.contains(where: { $0 < 0 }) { return "0 pt 以上を入れてください。" }
+        if let problem = limitProblem(spots) { return problem }
         let total = spots.values.reduce(0, +)
         if total > m.balance { return "\(m.name)さんのチップが足りません（\(m.balance) pt）。" }
         return nil
+    }
+
+    /// 下限・上限（0 は「なし」）から外れたベットがあれば、その理由
+    func limitProblem(_ spots: [BetSpot: Int]) -> String? {
+        for spot in BetSpot.allCases {
+            guard let amount = spots[spot], amount > 0 else { continue }
+            if minBet > 0, amount < minBet { return "\(spot.title) は \(minBet.formatted()) pt 以上にしてください（下限）。" }
+            if maxBet > 0, amount > maxBet { return "\(spot.title) は \(maxBet.formatted()) pt までです（上限）。" }
+        }
+        return nil
+    }
+
+    /// 「下限 10 / 上限 1,000」。どちらもなしなら nil。
+    var limitText: String? {
+        guard minBet > 0 || maxBet > 0 else { return nil }
+        let low = minBet > 0 ? minBet.formatted() : "なし"
+        let high = maxBet > 0 ? maxBet.formatted() : "なし"
+        return "下限 \(low) / 上限 \(high)"
     }
 
     mutating func setBet(_ spots: [BetSpot: Int], for id: UUID) {

@@ -122,7 +122,8 @@ struct BetSheet: View {
         NavigationStack {
             ScrollView {
                 BetPad(spots: spots, balance: member.balance, commission: table.bankerCommission,
-                       previous: table.lastRound?.bets[member.id]) { spots = $0 }
+                       previous: table.lastRound?.bets[member.id],
+                       minBet: table.minBet, maxBet: table.maxBet) { spots = $0 }
                     .padding(16)
                     .background(Theme.deck, in: RoundedRectangle(cornerRadius: 16))
                     .padding(.horizontal, 16)
@@ -156,6 +157,9 @@ struct BetPad: View {
     let commission: Bool
     /// 前の手のベット（「前の手と同じ」）
     let previous: [BetSpot: Int]?
+    /// 1か所あたりの下限・上限（0 は「なし」）
+    var minBet = 0
+    var maxBet = 0
     /// 記録係の画面の横に並べるときは、ボタンを低くする
     var compact = false
     let onChange: ([BetSpot: Int]) -> Void
@@ -166,6 +170,12 @@ struct BetPad: View {
     var body: some View {
         let staked = spots.values.reduce(0, +)
         VStack(spacing: 8) {
+            if minBet > 0 || maxBet > 0 {
+                Text("1か所あたり　下限 \(minBet > 0 ? minBet.formatted() : "なし") / 上限 \(maxBet > 0 ? maxBet.formatted() : "なし")")
+                    .font(.caption2)
+                    .opacity(0.75)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
             HStack(spacing: 6) {
                 figure("残高", balance)
                 figure("ベット中", staked)
@@ -182,8 +192,10 @@ struct BetPad: View {
             }
             HStack(spacing: 6) {
                 ForEach(Self.steps, id: \.self) { step in
-                    padButton("+\(step)") { change(selected, to: (spots[selected] ?? 0) + step) }
-                        .disabled(balance - staked < step)
+                    let current = spots[selected] ?? 0
+                    let next = clamp(current + step)
+                    padButton("+\(step)") { change(selected, to: next) }
+                        .disabled(next <= current || balance - staked < next - current)
                 }
                 padButton("0") { change(selected, to: 0) }
             }
@@ -242,8 +254,19 @@ struct BetPad: View {
         set(d)
     }
 
+    /// 0 でなければ、下限以上・上限以下にそろえる（+10 を押しても下限に届くように、上限で止まるように）
+    private func clamp(_ amount: Int) -> Int {
+        guard amount > 0 else { return 0 }
+        var a = amount
+        if minBet > 0 { a = max(a, minBet) }
+        if maxBet > 0 { a = min(a, maxBet) }
+        return a
+    }
+
     private func set(_ new: [BetSpot: Int]) {
         guard new.values.reduce(0, +) <= balance else { return }
+        // 「前の手と同じ」で、あとから変わった下限・上限から外れるものは入れない
+        guard new.values.allSatisfy({ $0 <= 0 || clamp($0) == $0 }) else { return }
         onChange(new)
     }
 

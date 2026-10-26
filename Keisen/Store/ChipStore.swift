@@ -71,10 +71,12 @@ final class ChipStore: NSObject {
 
     // MARK: - 親
 
-    func createTable(name: String, startingChips: Int, hostPlays: Bool, bankerCommission: Bool = false) {
+    func createTable(name: String, startingChips: Int, hostPlays: Bool, bankerCommission: Bool = false,
+                     minBet: Int = 0, maxBet: Int = 0) {
         rememberName()
         stopBrowsing()
-        var t = ChipTable(name: name, startingChips: max(0, startingChips), bankerCommission: bankerCommission)
+        var t = ChipTable(name: name, startingChips: max(0, startingChips), bankerCommission: bankerCommission,
+                          minBet: max(0, minBet), maxBet: max(0, maxBet))
         if hostPlays {
             let trimmed = myName.trimmingCharacters(in: .whitespaces)
             t.join(id: myID, name: trimmed.isEmpty ? "記録係" : trimmed)
@@ -96,6 +98,16 @@ final class ChipStore: NSObject {
     func removeMember(_ id: UUID) {
         guard role == .host, var t = table, t.member(id) != nil else { return }
         t.removeMember(id, by: myID)
+        table = t
+        commit()
+    }
+
+    /// ベットの下限・上限を変える（0 は「なし」）。いまのベットで外れるものは消す。
+    func setLimits(minBet: Int, maxBet: Int) {
+        guard role == .host, var t = table else { return }
+        t.minBet = max(0, minBet)
+        t.maxBet = max(0, maxBet)
+        for (id, spots) in t.bets where t.limitProblem(spots) != nil { t.bets[id] = nil }
         table = t
         commit()
     }
@@ -320,11 +332,10 @@ final class ChipStore: NSObject {
             commit()
         case (.host, .move(let move)):
             guard var t = table, let id = members[peer] else { return }
-            // 子が動かせるのは、自分のチップと、ポットから自分へだけ
+            // 子が動かせるのは、自分のチップをほかの参加者へ渡すことだけ
             let allowed: Bool
             switch (move.from, move.to) {
-            case (.member(let from), .member), (.member(let from), .pot): allowed = from == id
-            case (.pot, .member(let to)): allowed = to == id
+            case (.member(let from), .member): allowed = from == id
             default: allowed = false
             }
             if !allowed || move.by != id {

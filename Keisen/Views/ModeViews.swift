@@ -111,8 +111,9 @@ struct ModeButton: View {
         Button {
             if chips.role == .none { mode = .choose } else { confirm = true }
         } label: {
-            Label("使い方を変える", systemImage: "rectangle.on.rectangle")
+            Label("使い方", systemImage: "rectangle.2.swap").labelStyle(.titleAndIcon)
         }
+        .accessibilityLabel("使い方を変える")
         .confirmationDialog(chips.role == .host ? "テーブルを閉じて、使い方を変えますか？" : "テーブルから抜けて、使い方を変えますか？",
                             isPresented: $confirm, titleVisibility: .visible) {
             Button(chips.role == .host ? "テーブルを閉じる" : "テーブルから抜ける", role: .destructive) {

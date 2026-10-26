@@ -27,6 +27,9 @@ private struct DealerSetupView: View {
     @State private var bankerCommission = false
     /// 親を置かず、記録係も自分のベットを入れる
     @State private var hostBets = false
+    /// 1か所あたりのベットの下限・上限（空は「なし」）
+    @State private var minBet: Int?
+    @State private var maxBet: Int?
 
     var body: some View {
         NavigationStack {
@@ -46,6 +49,8 @@ private struct DealerSetupView: View {
                     }
                     Toggle("BANKER の勝ちから手数料5%を引く", isOn: $bankerCommission)
                     Toggle("自分もプレイヤーとしてベットする", isOn: $hostBets)
+                    limitField("ベットの下限（1か所あたり）", value: $minBet)
+                    limitField("ベットの上限（1か所あたり）", value: $maxBet)
                 } footer: {
                     Text("テーブルを作った iPhone で勝敗を記録し、みんなのベットを精算します（払い戻しは「場」から）。ほかの人は自分の iPhone で「テーブルに参加する」を選び、この画面に出る4桁の番号で参加します。アプリのない人は、参加者として足して代わりにベットを入れられます。親を置かずに全員で遊ぶときは「自分もプレイヤーとしてベットする」をオンにすると、記録しながら自分もベットできます。")
                 }
@@ -53,7 +58,8 @@ private struct DealerSetupView: View {
                     Button("テーブルを作る") {
                         let name = tableName.trimmingCharacters(in: .whitespaces)
                         chips.createTable(name: name.isEmpty ? "テーブル" : name, startingChips: startingChips,
-                                          hostPlays: hostBets, bankerCommission: bankerCommission)
+                                          hostPlays: hostBets, bankerCommission: bankerCommission,
+                                          minBet: minBet ?? 0, maxBet: maxBet ?? 0)
                         chips.setOpen(true)
                     }
                     .bold()
@@ -67,6 +73,18 @@ private struct DealerSetupView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) { ModeButton(chips: chips) }
             }
+        }
+    }
+
+    private func limitField(_ title: String, value: Binding<Int?>) -> some View {
+        HStack {
+            Text(title)
+            Spacer()
+            TextField("なし", value: value, format: .number)
+                .keyboardType(.numberPad)
+                .multilineTextAlignment(.trailing)
+                .frame(maxWidth: 120)
+            Text("pt").foregroundStyle(.secondary)
         }
     }
 }
@@ -155,7 +173,7 @@ private struct DealerTableView: View {
                 ToolbarItem(placement: .topBarLeading) { ModeButton(chips: chips) }
                 ToolbarItem(placement: .topBarLeading) {
                     Button { showHistory = true } label: {
-                        Label("過去のシュー", systemImage: "clock.arrow.circlepath")
+                        Label("履歴", systemImage: "clock.arrow.circlepath").labelStyle(.titleAndIcon)
                     }
                 }
                 ToolbarItem(placement: .topBarLeading) {
@@ -163,7 +181,7 @@ private struct DealerTableView: View {
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showManage = true } label: {
-                        Label("テーブル", systemImage: "person.3")
+                        Label("テーブル", systemImage: "person.3").labelStyle(.titleAndIcon)
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
@@ -175,12 +193,12 @@ private struct DealerTableView: View {
                         Toggle("珠盤路・下三路・問路も見る", isOn: $showAllRoads)
                         Toggle("結果を英語で読み上げる", isOn: $speakResults)
                     } label: {
-                        Label("表示の設定", systemImage: "slider.horizontal.3")
+                        Label("表示", systemImage: "slider.horizontal.3").labelStyle(.titleAndIcon)
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { confirmNewShoe = true } label: {
-                        Label("新しいシュー", systemImage: "plus.square.on.square")
+                        Label("新しいシュー", systemImage: "plus.rectangle.on.rectangle").labelStyle(.titleAndIcon)
                     }
                 }
             }
@@ -228,7 +246,8 @@ private struct DealerTableView: View {
                 .font(.caption.bold())
                 .frame(maxWidth: .infinity, alignment: .leading)
             BetPad(spots: table.bets[me.id] ?? [:], balance: me.balance, commission: table.bankerCommission,
-                   previous: table.lastRound?.bets[me.id], compact: true) { spots in
+                   previous: table.lastRound?.bets[me.id],
+                   minBet: table.minBet, maxBet: table.maxBet, compact: true) { spots in
                 chips.placeBet(spots, for: me.id)
             }
         }
@@ -248,6 +267,9 @@ private struct DealerTableView: View {
                     Text("参加番号").font(.system(size: 9)).opacity(0.7)
                     Text(chips.code).font(.title3.bold().monospacedDigit())
                     Text("\(chips.connectedCount) 台つながっている").font(.system(size: 9)).opacity(0.7)
+                    if let limits = table.limitText {
+                        Text(limits).font(.system(size: 9)).opacity(0.7)
+                    }
                 } else {
                     Text("近くの人は\n参加できません").font(.caption2).opacity(0.7)
                 }

@@ -115,7 +115,8 @@ private struct PlayerTableView: View {
                     }
                     VStack(spacing: 8) {
                         BetPad(spots: draft, balance: balance, commission: table?.bankerCommission ?? false,
-                               previous: table?.lastRound?.bets[chips.myID]) { spots in
+                               previous: table?.lastRound?.bets[chips.myID],
+                               minBet: table?.minBet ?? 0, maxBet: table?.maxBet ?? 0) { spots in
                             draft = spots
                             chips.placeBet(spots, for: chips.myID)
                         }
@@ -142,7 +143,7 @@ private struct PlayerTableView: View {
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showManage = true } label: {
-                        Label("テーブル", systemImage: "person.3")
+                        Label("テーブル", systemImage: "person.3").labelStyle(.titleAndIcon)
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
@@ -154,7 +155,7 @@ private struct PlayerTableView: View {
                         Toggle("珠盤路・下三路も見る", isOn: $showAllRoads)
                         Toggle("結果を英語で読み上げる", isOn: $speakResults)
                     } label: {
-                        Label("表示の設定", systemImage: "slider.horizontal.3")
+                        Label("表示", systemImage: "slider.horizontal.3").labelStyle(.titleAndIcon)
                     }
                 }
             }

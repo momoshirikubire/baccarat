@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// チップのテーブルの管理（親：参加番号・近くの人が参加できる・参加者・持ち点に戻す、だれでも：渡す／ポットに出す・履歴）。
+/// チップのテーブルの管理（親：参加番号・近くの人が参加できる・ベットの下限と上限・参加者・持ち点に戻す、だれでも：渡す・履歴）。
 /// 親とプレイヤーの画面のツールバーから開くシート。
 struct ChipManageSheet: View {
     let store: ChipStore
@@ -13,7 +13,7 @@ struct ChipManageSheet: View {
                 .navigationTitle(store.table?.name ?? "テーブル")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
-                    ToolbarItem(placement: .confirmationAction) { Button("閉じる") { dismiss() } }
+                    ToolbarItem(placement: .confirmationAction) { Button("完了") { dismiss() } }
                 }
         }
         .onChange(of: store.table == nil) { if store.table == nil { dismiss() } }
@@ -43,6 +43,9 @@ private struct ChipTableView: View {
     @State private var newMember = ""
     @State private var confirmRestart = false
     @State private var confirmClose = false
+    @State private var editingLimits = false
+    @State private var minText = ""
+    @State private var maxText = ""
 
     private var isHost: Bool { store.role == .host }
 
@@ -50,17 +53,30 @@ private struct ChipTableView: View {
         let table = store.table
         List {
             if let table {
-                Section {
-                    HStack(alignment: .firstTextBaseline) {
-                        if let me = table.member(store.myID) {
-                            balance("あなた", me.balance)
-                        }
-                        balance("ポット", table.pot)
+                if let me = table.member(store.myID) {
+                    Section {
+                        balance("あなた", me.balance)
+                            .listRowBackground(Theme.sheet)
                     }
-                    .listRowBackground(Theme.sheet)
                 }
 
                 if isHost { hostSection }
+
+                Section {
+                    LabeledContent("下限", value: table.minBet > 0 ? "\(table.minBet.formatted()) pt" : "なし")
+                    LabeledContent("上限", value: table.maxBet > 0 ? "\(table.maxBet.formatted()) pt" : "なし")
+                    if isHost {
+                        Button("下限・上限を変える") {
+                            minText = table.minBet > 0 ? "\(table.minBet)" : ""
+                            maxText = table.maxBet > 0 ? "\(table.maxBet)" : ""
+                            editingLimits = true
+                        }
+                    }
+                } header: {
+                    Text("ベット（1か所あたり）")
+                } footer: {
+                    Text("BANKER・PLAYER・TIE・B PAIR・P PAIR のそれぞれに入れられる額です。")
+                }
 
                 Section {
                     ForEach(table.members) { m in
@@ -92,7 +108,7 @@ private struct ChipTableView: View {
                     Text("参加者")
                 } footer: {
                     Text(isHost
-                         ? "名前をタップすると、その人のチップを動かせます。アプリを入れていない人も「参加者を足す」で入れられます。"
+                         ? "名前をタップすると、その人のチップをほかの人に渡せます。アプリを入れていない人も「参加者を足す」で入れられます。"
                          : "名前をタップすると、その人にチップを渡せます。")
                 }
 
@@ -108,16 +124,23 @@ private struct ChipTableView: View {
         }
         .safeAreaInset(edge: .bottom, spacing: 0) { actionBar }
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                Menu {
-                    if isHost {
-                        Button { confirmRestart = true } label: { Label("持ち点に戻す", systemImage: "arrow.counterclockwise") }
-                        Button(role: .destructive) { confirmClose = true } label: { Label("テーブルを閉じる", systemImage: "xmark.circle") }
-                    } else {
-                        Button(role: .destructive) { store.leave() } label: { Label("テーブルから抜ける", systemImage: "rectangle.portrait.and.arrow.right") }
+            // 「…」のメニューにしまわず、文字つきのボタンで並べる
+            if isHost {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button(role: .destructive) { confirmClose = true } label: {
+                        Label("テーブルを閉じる", systemImage: "xmark.circle").labelStyle(.titleAndIcon)
                     }
-                } label: {
-                    Label("メニュー", systemImage: "ellipsis.circle")
+                }
+                ToolbarItem(placement: .topBarLeading) {
+                    Button { confirmRestart = true } label: {
+                        Label("持ち点に戻す", systemImage: "arrow.counterclockwise").labelStyle(.titleAndIcon)
+                    }
+                }
+            } else {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button(role: .destructive) { store.leave() } label: {
+                        Label("テーブルから抜ける", systemImage: "rectangle.portrait.and.arrow.right").labelStyle(.titleAndIcon)
+                    }
                 }
             }
         }
@@ -127,6 +150,16 @@ private struct ChipTableView: View {
                     store.move(from: $0, to: $1, amount: $2)
                 }
             }
+        }
+        .alert("ベットの下限・上限", isPresented: $editingLimits) {
+            TextField("下限（なしは空のまま）", text: $minText).keyboardType(.numberPad)
+            TextField("上限（なしは空のまま）", text: $maxText).keyboardType(.numberPad)
+            Button("変える") {
+                store.setLimits(minBet: Int(minText) ?? 0, maxBet: Int(maxText) ?? 0)
+            }
+            Button("キャンセル", role: .cancel) {}
+        } message: {
+            Text("pt で入れます。いまのベットで範囲から外れるものは消えます。")
         }
         .alert("参加者を足す", isPresented: $addingMember) {
             TextField("名前", text: $newMember)
@@ -159,10 +192,10 @@ private struct ChipTableView: View {
                 LabeledContent("つながっている人", value: "\(store.connectedCount) 人")
             }
         } header: {
-            Text("親")
+            Text("参加")
         } footer: {
             if store.isOpen {
-                Text("参加する人は「みんなでチップ：プレイヤー」で近くのテーブルを選び、この番号を入れます。親のアプリを開いたままにしてください。")
+                Text("参加する人は「テーブルに参加する」で近くのテーブルを選び、この番号を入れます。この iPhone のアプリを開いたままにしてください。")
             }
         }
     }
@@ -170,10 +203,6 @@ private struct ChipTableView: View {
     private var actionBar: some View {
         HStack(spacing: 8) {
             action("渡す", "arrow.left.arrow.right") { moving = draft(from: me, to: nil) }
-            action("ポットに出す", "arrow.down.circle") { moving = draft(from: me, to: .pot) }
-            action("ポットを取る", "arrow.up.circle") {
-                moving = draft(from: .pot, to: me, amount: store.table?.pot)
-            }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
@@ -188,8 +217,8 @@ private struct ChipTableView: View {
     }
 
     private func draft(toward id: UUID) -> MoveDraft {
-        // 親は、その人のチップを動かす（ポットへ出すのがいちばん多い）。子は、その人に渡す。
-        if isHost || id == store.myID { return draft(from: .member(id), to: .pot) }
+        // 親は、その人のチップをほかの人へ。子は、自分からその人へ渡す。
+        if isHost || id == store.myID { return draft(from: .member(id), to: nil) }
         return draft(from: me, to: .member(id))
     }
 
@@ -197,14 +226,14 @@ private struct ChipTableView: View {
         MoveDraft(from: from, to: to, amount: amount)
     }
 
-    /// 動かせる元。子は自分とポットだけ。
+    /// 動かせる元。子は自分だけ。親は場からも出せる（足りなくなった人に配るなど）。
     private func sources(_ table: ChipTable) -> [ChipParty] {
-        if isHost { return table.members.map { .member($0.id) } + [.pot, .bank] }
-        return [.member(store.myID), .pot]
+        if isHost { return table.members.map { .member($0.id) } + [.bank] }
+        return [.member(store.myID)]
     }
 
     private func destinations(_ table: ChipTable) -> [ChipParty] {
-        table.members.map { .member($0.id) } + [.pot] + (isHost ? [.bank] : [])
+        table.members.map { .member($0.id) } + (isHost ? [.bank] : [])
     }
 
     private func balance(_ title: String, _ value: Int) -> some View {
@@ -284,7 +313,7 @@ private struct MoveSheet: View {
         self.onMove = onMove
         let from = draft.from.flatMap { sources.contains($0) ? $0 : nil } ?? sources.first ?? .bank
         let to = draft.to.flatMap { destinations.contains($0) ? $0 : nil }
-            ?? destinations.first { $0 != from } ?? .pot
+            ?? destinations.first { $0 != from } ?? .bank
         _from = State(initialValue: from)
         _to = State(initialValue: to)
         _amount = State(initialValue: draft.amount.flatMap { $0 > 0 ? $0 : nil })
@@ -292,8 +321,8 @@ private struct MoveSheet: View {
 
     private var available: Int? {
         switch from {
-        case .member(let id): table.member(id)?.balance
-        case .pot: table.pot
+        // ベット中の分は渡せない
+        case .member(let id): table.available(id)
         case .bank: nil
         }
     }
