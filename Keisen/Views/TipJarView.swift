@@ -89,9 +89,13 @@ struct DeveloperNote: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 10) {
-                Image(systemName: "person.crop.circle.fill")
-                    .font(.system(size: 36))
-                    .foregroundStyle(Theme.banker.opacity(0.8))
+                Image("DeveloperIcon")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 56, height: 56)
+                    .clipShape(Circle())
+                    .overlay(Circle().stroke(Theme.line))
+                    .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("ひとりで作っています").font(.headline)
                     Text("作った人：桃尻くびれちゃん").font(.caption).foregroundStyle(.secondary)
