@@ -110,6 +110,7 @@ struct BigRoadView: View {
 }
 
 struct BeadPlateView: View {
+    let game: RoadGame
     let hands: [Hand]
     var cell: CGFloat = 26
 
@@ -119,7 +120,7 @@ struct BeadPlateView: View {
                 let x = CGFloat(i / Roads.rows), y = CGFloat(i % Roads.rows)
                 let center = CGPoint(x: (x + 0.5) * cell, y: (y + 0.5) * cell)
                 Pen.dot(&ctx, center, radius: cell / 2 - 2.5, color: Theme.color(h.outcome))
-                ctx.draw(Text(h.outcome.bead).font(.system(size: 12.5, weight: .bold)).foregroundStyle(Color.white), at: center)
+                ctx.draw(Text(game.bead(h.outcome)).font(.system(size: 12.5, weight: .bold)).foregroundStyle(Color.white), at: center)
                 if h.bankerPair {
                     Pen.dot(&ctx, CGPoint(x: x * cell + 5, y: y * cell + 5), radius: 3.2, color: Theme.sheet)
                     Pen.dot(&ctx, CGPoint(x: x * cell + 5, y: y * cell + 5), radius: 2.4, color: Theme.banker)
@@ -192,13 +193,14 @@ struct RoadCard<Content: View>: View {
 
 /// 1つのシューの罫線一式（いまのシューにも、過去のシューにも使う）
 struct RoadsBoard: View {
+    let game: RoadGame
     let hands: [Hand]
 
     var body: some View {
         let big = Roads.bigRoad(hands)
         VStack(spacing: 10) {
             RoadCard(title: "大路", detail: streak(big)) { BigRoadView(road: big) }
-            RoadCard(title: "珠盤路") { BeadPlateView(hands: hands) }
+            RoadCard(title: "珠盤路") { BeadPlateView(game: game, hands: hands) }
             ForEach(DerivedRoad.allCases) { road in
                 RoadCard(title: road.title) { DerivedRoadView(columns: big.columns, road: road) }
             }
@@ -208,22 +210,25 @@ struct RoadsBoard: View {
     private func streak(_ big: Roads.BigRoad) -> String? {
         guard let current = big.columns.last, let head = current.first else { return nil }
         let longest = big.columns.map(\.count).max() ?? 0
-        return "いま \(head.outcome.rawValue)\(current.count)連・最長 \(longest)連"
+        return "いま \(game.letter(head.outcome))\(current.count)連・最長 \(longest)連"
     }
 }
 
 struct StatsBar: View {
+    let game: RoadGame
     let shoe: Shoe
 
     var body: some View {
         let c = shoe.count
         let n = shoe.hands.count
         HStack(spacing: 6) {
-            tile("\(c.banker)", "バンカー", percent(c.banker, n), Theme.banker)
-            tile("\(c.player)", "プレイヤー", percent(c.player, n), Theme.player)
-            tile("\(c.tie)", "タイ", percent(c.tie, n), Theme.tie)
-            tile("\(c.bankerPair)", "Bペア", nil, Theme.banker)
-            tile("\(c.playerPair)", "Pペア", nil, Theme.player)
+            tile("\(c.banker)", game.name(.banker), percent(c.banker, n), Theme.banker)
+            tile("\(c.player)", game.name(.player), percent(c.player, n), Theme.player)
+            tile("\(c.tie)", game.name(.tie), percent(c.tie, n), Theme.tie)
+            if game.hasPairs {
+                tile("\(c.bankerPair)", "Bペア", nil, Theme.banker)
+                tile("\(c.playerPair)", "Pペア", nil, Theme.player)
+            }
         }
     }
 

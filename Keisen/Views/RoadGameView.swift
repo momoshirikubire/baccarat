@@ -1,12 +1,14 @@
 import SwiftUI
 
-struct ContentView: View {
-    @Environment(ShoeStore.self) private var store
+/// バカラ・ドラゴンタイガーの罫線画面
+struct RoadGameView: View {
+    let store: ShoeStore
     @State private var bankerPair = false
     @State private var playerPair = false
     @State private var confirmNewShoe = false
     @State private var showHistory = false
-    @State private var showTips = false
+
+    private var game: RoadGame { store.game }
 
     var body: some View {
         NavigationStack {
@@ -20,13 +22,13 @@ struct ContentView: View {
                             .padding(10)
                             .background(Theme.sheet, in: RoundedRectangle(cornerRadius: 8))
                     }
-                    StatsBar(shoe: store.current)
-                    RoadsBoard(hands: store.current.hands)
+                    StatsBar(game: game, shoe: store.current)
+                    RoadsBoard(game: game, hands: store.current.hands)
                 }
                 .padding(12)
             }
             .background(Theme.background)
-            .navigationTitle("\(store.current.hands.count) 手")
+            .navigationTitle("\(game.title)・\(store.current.hands.count) 手")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -34,17 +36,16 @@ struct ContentView: View {
                         Label("過去のシュー", systemImage: "clock.arrow.circlepath")
                     }
                 }
-                ToolbarItemGroup(placement: .topBarTrailing) {
-                    Button { showTips = true } label: {
-                        Label("応援する", systemImage: "heart")
-                    }
+                ToolbarItem(placement: .topBarTrailing) {
                     Button { confirmNewShoe = true } label: {
                         Label("新しいシュー", systemImage: "plus.square.on.square")
                     }
                 }
             }
+            .tipButton()
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 InputDeck(
+                    game: game,
                     hands: store.current.hands,
                     bankerPair: $bankerPair,
                     playerPair: $playerPair,
@@ -69,15 +70,14 @@ struct ContentView: View {
                      ? "空の罫線から記録を始めます。"
                      : "いまのシューは「過去のシュー」に残ります。")
             }
-            .sheet(isPresented: $showHistory) { HistoryView() }
-            .sheet(isPresented: $showTips) { TipJarView() }
+            .sheet(isPresented: $showHistory) { HistoryView(store: store) }
         }
-        .tint(Theme.ink)
     }
 }
 
 /// 画面下の入力盤。問路・結果ボタン・ペア・1つ戻す。
 struct InputDeck: View {
+    let game: RoadGame
     let hands: [Hand]
     @Binding var bankerPair: Bool
     @Binding var playerPair: Bool
@@ -92,13 +92,15 @@ struct InputDeck: View {
                 ask(.player)
             }
             HStack(spacing: 8) {
-                resultButton(.banker, sub: "B 庄")
-                resultButton(.tie, sub: "T 和").frame(maxWidth: 90)
-                resultButton(.player, sub: "P 闲")
+                resultButton(.banker)
+                resultButton(.tie).frame(maxWidth: 90)
+                resultButton(.player)
             }
             HStack(spacing: 8) {
-                toggle("Bペア", isOn: $bankerPair, color: Theme.banker)
-                toggle("Pペア", isOn: $playerPair, color: Theme.player)
+                if game.hasPairs {
+                    toggle("Bペア", isOn: $bankerPair, color: Theme.banker)
+                    toggle("Pペア", isOn: $playerPair, color: Theme.player)
+                }
                 Button(action: onUndo) {
                     Label("1つ戻す", systemImage: "arrow.uturn.backward")
                         .labelStyle(.titleAndIcon)
@@ -123,7 +125,7 @@ struct InputDeck: View {
             Roads.nextMark(after: hands, outcome: outcome, road: road).map { (road: road, mark: $0) }
         }
         return HStack(spacing: 6) {
-            Text("\(outcome.rawValue)なら").font(.caption.bold()).foregroundStyle(Theme.color(outcome))
+            Text("\(game.letter(outcome))なら").font(.caption.bold()).foregroundStyle(Theme.color(outcome))
             if marks.isEmpty {
                 Text("まだ出ません").font(.caption2).foregroundStyle(Theme.deckInk.opacity(0.6))
             } else {
@@ -137,11 +139,13 @@ struct InputDeck: View {
         .accessibilityElement(children: .combine)
     }
 
-    private func resultButton(_ outcome: Outcome, sub: String) -> some View {
+    private func resultButton(_ outcome: Outcome) -> some View {
         Button { onResult(outcome) } label: {
             VStack(spacing: 2) {
-                Text(outcome.name).font(.headline)
-                Text(sub).font(.caption2).opacity(0.85)
+                Text(game.name(outcome)).font(.headline)
+                // ドラゴンタイガーのタイは文字も珠盤路も「和」なので1つだけ出す
+                let letter = game.letter(outcome), bead = game.bead(outcome)
+                Text(letter == bead ? bead : "\(letter) \(bead)").font(.caption2).opacity(0.85)
             }
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity, minHeight: 58)
@@ -171,7 +175,6 @@ struct PressStyle: ButtonStyle {
 }
 
 #Preview {
-    ContentView()
-        .environment(ShoeStore())
+    RoadGameView(store: ShoeStore(game: .baccarat))
         .environment(TipStore())
 }
