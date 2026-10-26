@@ -68,13 +68,13 @@ struct PokerLedgerView: View {
 
             if !store.players.isEmpty {
                 Section("精算") {
-                    LabeledContent("バイインの合計", value: "\(store.totalIn) pt")
-                    LabeledContent("最後のチップの合計", value: "\(store.totalOut) pt")
+                    LabeledContent("バイインの合計", value: "\(store.totalIn.formatted()) pt")
+                    LabeledContent("最後のチップの合計", value: "\(store.totalOut.formatted()) pt")
                     if !store.everyoneCashedOut {
                         Text("全員の「最後」を入れると、だれがだれに何ポイント渡すかが出ます。")
                             .font(.footnote).foregroundStyle(.secondary)
                     } else if store.totalIn != store.totalOut {
-                        Label("合計が \(store.totalOut - store.totalIn) pt ずれています。数え直してください。", systemImage: "exclamationmark.triangle.fill")
+                        Label("合計が \((store.totalOut - store.totalIn).formatted()) pt ずれています。数え直してください。", systemImage: "exclamationmark.triangle.fill")
                             .font(.footnote).foregroundStyle(Theme.banker)
                     } else {
                         let transfers = Settlement.transfers(store.players)

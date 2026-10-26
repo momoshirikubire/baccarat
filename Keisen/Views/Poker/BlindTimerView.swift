@@ -6,7 +6,8 @@ struct BlindTimerView: View {
     @State private var editing = false
 
     var body: some View {
-        TimelineView(.periodic(from: .now, by: 0.5)) { context in
+        // 起点を .now にすると描き直すたびに予定が変わって描画が止まらなくなるので、固定の日付にする
+        TimelineView(.periodic(from: .distantPast, by: 0.5)) { context in
             let clock = store.clock
             let remaining = clock.remaining(at: context.date)
             let level = clock.levels.indices.contains(clock.level) ? clock.levels[clock.level] : nil

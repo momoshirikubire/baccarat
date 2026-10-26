@@ -143,7 +143,9 @@ struct InputDeck: View {
         Button { onResult(outcome) } label: {
             VStack(spacing: 2) {
                 Text(game.name(outcome)).font(.headline)
-                Text("\(game.letter(outcome)) \(game.bead(outcome))").font(.caption2).opacity(0.85)
+                // ドラゴンタイガーのタイは文字も珠盤路も「和」なので1つだけ出す
+                let letter = game.letter(outcome), bead = game.bead(outcome)
+                Text(letter == bead ? bead : "\(letter) \(bead)").font(.caption2).opacity(0.85)
             }
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity, minHeight: 58)
