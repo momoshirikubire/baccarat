@@ -33,10 +33,10 @@ struct RoadGameView: View {
                     HStack(spacing: 0) {
                         // 大路の6段が画面の高さに収まるマスの大きさにする（集計の段・見出し・余白を引く）
                         GeometryReader { geo in
-                            // ツールバーの下にもぐる部分があれば、それも引く
-                            let height = geo.size.height - geo.safeAreaInsets.top - geo.safeAreaInsets.bottom
+                            // ツールバーの下にもぐる部分があれば、それも引く（下は安全領域が小さいので引かない）
+                            let height = geo.size.height - geo.safeAreaInsets.top
                             board(scale: 1.35,
-                                  fitCell: max(22, min(roadsOnly ? 80 : 42, (height - (roadsOnly ? 64 : 130)) / CGFloat(Roads.rows))),
+                                  fitCell: max(22, min(roadsOnly ? 80 : 42, (height - (roadsOnly ? 56 : 130)) / CGFloat(Roads.rows))),
                                   compact: roadsOnly)
                         }
                         deck(side: true)
