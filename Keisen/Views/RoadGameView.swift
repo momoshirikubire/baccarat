@@ -104,7 +104,7 @@ struct RoadGameView: View {
                      : "いまのシューは「過去のシュー」に残ります。")
             }
             .sheet(isPresented: $showHistory) { HistoryView(store: store) }
-            .alert("罫線ノートを応援しませんか？", isPresented: $showNudge) {
+            .alert("バカラノートを応援しませんか？", isPresented: $showNudge) {
                 Button("応援する") { showTips = true }
                 Button("あとで", role: .cancel) {}
             } message: {

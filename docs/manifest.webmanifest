@@ -1,6 +1,6 @@
 {
-  "name": "バカラ罫線ノート",
-  "short_name": "罫線ノート",
+  "name": "バカラノート",
+  "short_name": "バカラノート",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
