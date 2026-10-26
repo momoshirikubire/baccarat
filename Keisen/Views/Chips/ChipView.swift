@@ -44,8 +44,6 @@ private struct ChipTableView: View {
     @State private var confirmRestart = false
     @State private var confirmClose = false
     @State private var editingLimits = false
-    @State private var minText = ""
-    @State private var maxText = ""
 
     private var isHost: Bool { store.role == .host }
 
@@ -66,11 +64,7 @@ private struct ChipTableView: View {
                     LabeledContent("下限", value: table.minBet > 0 ? "\(table.minBet.formatted()) pt" : "なし")
                     LabeledContent("上限", value: table.maxBet > 0 ? "\(table.maxBet.formatted()) pt" : "なし")
                     if isHost {
-                        Button("下限・上限を変える") {
-                            minText = table.minBet > 0 ? "\(table.minBet)" : ""
-                            maxText = table.maxBet > 0 ? "\(table.maxBet)" : ""
-                            editingLimits = true
-                        }
+                        Button("下限・上限を変える") { editingLimits = true }
                     }
                 } header: {
                     Text("ベット（1か所あたり）")
@@ -151,15 +145,10 @@ private struct ChipTableView: View {
                 }
             }
         }
-        .alert("ベットの下限・上限", isPresented: $editingLimits) {
-            TextField("下限（なしは空のまま）", text: $minText).keyboardType(.numberPad)
-            TextField("上限（なしは空のまま）", text: $maxText).keyboardType(.numberPad)
-            Button("変える") {
-                store.setLimits(minBet: Int(minText) ?? 0, maxBet: Int(maxText) ?? 0)
+        .sheet(isPresented: $editingLimits) {
+            if let table = store.table {
+                LimitEditSheet(table: table) { store.setLimits(minBet: $0, maxBet: $1) }
             }
-            Button("キャンセル", role: .cancel) {}
-        } message: {
-            Text("pt で入れます。いまのベットで範囲から外れるものは消えます。")
         }
         .alert("参加者を足す", isPresented: $addingMember) {
             TextField("名前", text: $newMember)
@@ -394,5 +383,48 @@ private struct MoveSheet: View {
                 .frame(maxWidth: .infinity, minHeight: 36)
         }
         .buttonStyle(.bordered)
+    }
+}
+
+/// 作ったあとにベットの下限・上限を変えるシート（テーブルを作るときと同じ選び方）
+private struct LimitEditSheet: View {
+    let table: ChipTable
+    let onSave: (Int, Int) -> Void
+    @State private var preset: BetLimitPreset
+    @State private var minBet: Int?
+    @State private var maxBet: Int?
+    @Environment(\.dismiss) private var dismiss
+
+    init(table: ChipTable, onSave: @escaping (Int, Int) -> Void) {
+        self.table = table
+        self.onSave = onSave
+        _preset = State(initialValue: .matching(minBet: table.minBet, maxBet: table.maxBet, startingChips: table.startingChips))
+        _minBet = State(initialValue: table.minBet > 0 ? table.minBet : nil)
+        _maxBet = State(initialValue: table.maxBet > 0 ? table.maxBet : nil)
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    BetLimitPicker(startingChips: table.startingChips, preset: $preset, minBet: $minBet, maxBet: $maxBet)
+                } footer: {
+                    Text("はじめの持ち点（\(table.startingChips.formatted()) pt）から出した範囲です。いまのベットで範囲から外れるものは消えます。")
+                }
+            }
+            .navigationTitle("ベットの下限・上限")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("キャンセル") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("変える") {
+                        let l = BetLimitPicker(startingChips: table.startingChips, preset: .constant(preset),
+                                               minBet: .constant(minBet), maxBet: .constant(maxBet)).limits
+                        onSave(l.min, l.max)
+                        dismiss()
+                    }
+                }
+            }
+        }
     }
 }

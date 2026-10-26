@@ -30,6 +30,7 @@ private struct DealerSetupView: View {
     /// 1か所あたりのベットの下限・上限（空は「なし」）
     @State private var minBet: Int?
     @State private var maxBet: Int?
+    @State private var limitPreset: BetLimitPreset = .normal
 
     var body: some View {
         NavigationStack {
@@ -49,8 +50,7 @@ private struct DealerSetupView: View {
                     }
                     Toggle("BANKER の勝ちから手数料5%を引く", isOn: $bankerCommission)
                     Toggle("自分もプレイヤーとしてベットする", isOn: $hostBets)
-                    limitField("ベットの下限（1か所あたり）", value: $minBet)
-                    limitField("ベットの上限（1か所あたり）", value: $maxBet)
+                    BetLimitPicker(startingChips: startingChips, preset: $limitPreset, minBet: $minBet, maxBet: $maxBet)
                 } footer: {
                     Text("テーブルを作った iPhone で勝敗を記録し、みんなのベットを精算します（払い戻しは「場」から）。ほかの人は自分の iPhone で「テーブルに参加する」を選び、この画面に出る4桁の番号で参加します。アプリのない人は、参加者として足して代わりにベットを入れられます。親を置かずに全員で遊ぶときは「自分もプレイヤーとしてベットする」をオンにすると、記録しながら自分もベットできます。")
                 }
@@ -59,7 +59,7 @@ private struct DealerSetupView: View {
                         let name = tableName.trimmingCharacters(in: .whitespaces)
                         chips.createTable(name: name.isEmpty ? "テーブル" : name, startingChips: startingChips,
                                           hostPlays: hostBets, bankerCommission: bankerCommission,
-                                          minBet: minBet ?? 0, maxBet: maxBet ?? 0)
+                                          minBet: chosenLimits.min, maxBet: chosenLimits.max)
                         chips.setOpen(true)
                     }
                     .bold()
@@ -81,16 +81,9 @@ private struct DealerSetupView: View {
         }
     }
 
-    private func limitField(_ title: String, value: Binding<Int?>) -> some View {
-        HStack {
-            Text(title)
-            Spacer()
-            TextField("なし", value: value, format: .number)
-                .keyboardType(.numberPad)
-                .multilineTextAlignment(.trailing)
-                .frame(maxWidth: 120)
-            Text("pt").foregroundStyle(.secondary)
-        }
+    private var chosenLimits: (min: Int, max: Int) {
+        BetLimitPicker(startingChips: startingChips, preset: .constant(limitPreset),
+                       minBet: .constant(minBet), maxBet: .constant(maxBet)).limits
     }
 }
 

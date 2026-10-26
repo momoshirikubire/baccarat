@@ -386,3 +386,50 @@ extension View {
         }
     }
 }
+
+// MARK: - ベットの下限・上限
+
+/// ベットの下限・上限を選ぶ欄（テーブルを作る画面と、テーブルのシートで使う）
+struct BetLimitPicker: View {
+    let startingChips: Int
+    @Binding var preset: BetLimitPreset
+    @Binding var minBet: Int?
+    @Binding var maxBet: Int?
+
+    var body: some View {
+        Picker("ベットの範囲", selection: $preset) {
+            ForEach(BetLimitPreset.allCases) { Text($0.title).tag($0) }
+        }
+        .pickerStyle(.segmented)
+        if preset == .custom {
+            field("下限（1か所あたり）", value: $minBet)
+            field("上限（1か所あたり）", value: $maxBet)
+        } else {
+            LabeledContent("1か所あたり", value: text)
+                .monospacedDigit()
+        }
+    }
+
+    /// 選んでいる範囲の下限・上限（0 は「なし」）
+    var limits: (min: Int, max: Int) {
+        preset.limits(startingChips: startingChips) ?? (minBet ?? 0, maxBet ?? 0)
+    }
+
+    private var text: String {
+        let l = limits
+        if l.min == 0 && l.max == 0 { return "下限・上限なし" }
+        return "下限 \(l.min.formatted()) / 上限 \(l.max.formatted())"
+    }
+
+    private func field(_ title: String, value: Binding<Int?>) -> some View {
+        HStack {
+            Text(title)
+            Spacer()
+            TextField("なし", value: value, format: .number)
+                .keyboardType(.numberPad)
+                .multilineTextAlignment(.trailing)
+                .frame(maxWidth: 120)
+            Text("pt").foregroundStyle(.secondary)
+        }
+    }
+}

@@ -106,6 +106,69 @@ extension ChipTable {
     }
 }
 
+/// テーブルを作るときに選ぶ、ベットの下限・上限（1か所あたり）。はじめの持ち点から出す。
+enum BetLimitPreset: String, CaseIterable, Identifiable {
+    case none, slow, normal, large, custom
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .none: "なし"
+        case .slow: "ゆっくり"
+        case .normal: "ふつう"
+        case .large: "大きく"
+        case .custom: "自分で決める"
+        }
+    }
+
+    /// 持ち点に対する割合（下限・上限）
+    private var ratios: (min: Double, max: Double)? {
+        switch self {
+        case .slow: (0.01, 0.1)
+        case .normal: (0.02, 0.2)
+        case .large: (0.05, 0.5)
+        case .none, .custom: nil
+        }
+    }
+
+    /// はじめの持ち点からの下限・上限。なしは (0, 0)、自分で決めるは nil。
+    func limits(startingChips: Int) -> (min: Int, max: Int)? {
+        if self == .none { return (0, 0) }
+        guard let r = ratios else { return nil }
+        let s = Double(max(1, startingChips))
+        let low = Self.nice(s * r.min)
+        var high = Self.nice(s * r.max)
+        // 上限は下限より大きく
+        if high <= low { high = Self.candidates.first { $0 > low } ?? low * 2 }
+        return (low, high)
+    }
+
+    /// いまの下限・上限がどの候補に当たるか（当たらなければ「自分で決める」、どちらも 0 なら「なし」）
+    static func matching(minBet: Int, maxBet: Int, startingChips: Int) -> BetLimitPreset {
+        if minBet == 0 && maxBet == 0 { return .none }
+        return [.slow, .normal, .large].first {
+            guard let l = $0.limits(startingChips: startingChips) else { return false }
+            return l.min == minBet && l.max == maxBet
+        } ?? .custom
+    }
+
+    /// きりのいい数：1, 5, 10, 25, 50, 100, 250, 500, 1,000, 2,500…
+    static let candidates: [Int] = {
+        var list = [1, 5]
+        var base = 10
+        while base <= 10_000_000 {
+            list += [base, base * 5 / 2, base * 5]
+            base *= 10
+        }
+        return list
+    }()
+
+    static func nice(_ value: Double) -> Int {
+        candidates.min { abs(Double($0) - value) < abs(Double($1) - value) } ?? 1
+    }
+}
+
 /// バカラで賭けられるところ
 enum BetSpot: String, Codable, CaseIterable, Identifiable {
     case banker, player, tie, bankerPair, playerPair
