@@ -28,8 +28,6 @@ struct RootView: View {
     let shoe: ShoeStore
     let chips: ChipStore
     @AppStorage("appMode") private var mode: AppMode = .choose
-    @AppStorage("announceInRoadsOnly") private var announceInRoadsOnly = false
-    @State private var announcement: ResultAnnouncement?
 
     var body: some View {
         content
@@ -47,14 +45,7 @@ struct RootView: View {
         case .choose:
             ModePickerView { mode = $0 }
         case .roadsOnly:
-            RoadGameView(store: shoe, modeButton: ModeButton(chips: chips)) { hand, number in
-                guard announceInRoadsOnly else { return }
-                withAnimation(.easeOut(duration: 0.15)) {
-                    announcement = ResultAnnouncement(hand: hand, handNumber: number)
-                }
-                ResultVoice.speak(hand)
-            }
-            .resultSplash($announcement)
+            RoadGameView(store: shoe, modeButton: ModeButton(chips: chips))
         case .dealer:
             DealerView(shoe: shoe, chips: chips)
         case .player:
@@ -68,47 +59,62 @@ struct ModePickerView: View {
     let onPick: (AppMode) -> Void
 
     var body: some View {
-        VStack(spacing: 14) {
-            Text("どう使いますか？")
-                .font(.title3.bold())
-                .foregroundStyle(Theme.ink)
-            HStack(spacing: 12) {
-                card(.roadsOnly, icon: "square.grid.3x3",
-                     title: "罫線だけ",
-                     detail: "1人で使う。勝敗を入れて罫線を記録します。")
-                card(.dealer, icon: "person.crop.rectangle.stack",
-                     title: "テーブルを作る（勝敗を記録する）",
-                     detail: "親・記録係になる。勝敗を入れると、みんなのベットを pt で精算します。自分もプレイヤーとしてベットできます。")
-                card(.player, icon: "person.2",
-                     title: "テーブルに参加する（プレイヤー）",
-                     detail: "近くのテーブルに参加して、自分の iPhone でベットします。勝敗は作った人が記録します。")
+        // 小さい画面の横向きでも文字を切らずに全部見せるため、はみ出す分はスクロールする
+        ScrollView {
+            VStack(spacing: 14) {
+                Text("どう使いますか？")
+                    .font(.title3.bold())
+                    .foregroundStyle(Theme.ink)
+                HStack(alignment: .top, spacing: 12) {
+                    card(.roadsOnly, icon: "square.grid.3x3",
+                         title: "罫線だけ",
+                         role: "1人で使う",
+                         detail: "勝敗を入れて罫線を記録します。")
+                    card(.dealer, icon: "person.crop.rectangle.stack",
+                         title: "テーブルを作る",
+                         role: "勝敗を記録する親になる",
+                         detail: "勝敗を入れると、みんなのベットを pt で精算します。自分もベットできます。")
+                    card(.player, icon: "person.2",
+                         title: "テーブルに参加する",
+                         role: "プレイヤーとしてベットする",
+                         detail: "近くのテーブルに入って、自分の iPhone でベットします。")
+                }
+                Text("あとから画面の左上の「使い方」で変えられます。チップは pt で数える遊び用の記録で、お金には換えられません。")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            Text("あとから画面の左上のボタンで変えられます。チップは pt で数える遊び用の記録で、お金には換えられません。")
-                .font(.footnote)
-                .foregroundStyle(Theme.muted)
+            .padding(20)
         }
-        .padding(20)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Theme.background)
     }
 
-    private func card(_ mode: AppMode, icon: String, title: String, detail: String) -> some View {
+    private func card(_ mode: AppMode, icon: String, title: String, role: String, detail: String) -> some View {
         Button { onPick(mode) } label: {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 6) {
                 Image(systemName: icon).font(.title2)
-                Text(title).font(.headline)
-                Text(detail).font(.footnote).foregroundStyle(Theme.muted)
+                Text(title)
+                    .font(.headline)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(role)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Theme.ink.opacity(0.8))
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(detail)
+                    .font(.footnote)
+                    .foregroundStyle(Theme.muted)
                     .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 0)
             }
             .foregroundStyle(Theme.ink)
+            .multilineTextAlignment(.leading)
             .padding(14)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .background(Theme.sheet, in: RoundedRectangle(cornerRadius: 14))
             .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.line))
         }
         .buttonStyle(PressStyle())
-        .frame(maxHeight: 190)
     }
 }
 

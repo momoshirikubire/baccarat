@@ -5,8 +5,6 @@ struct RoadGameView: View {
     let store: ShoeStore
     /// 使い方を変えるボタン（罫線だけのモードで左上に出す）
     var modeButton: ModeButton? = nil
-    /// 結果を記録したあとに呼ぶ（大きな表示と読み上げ）
-    var onRecorded: ((Hand, Int) -> Void)? = nil
     @State private var bankerPair = false
     @State private var playerPair = false
     @State private var confirmNewShoe = false
@@ -21,8 +19,9 @@ struct RoadGameView: View {
     /// 珠盤路・下三路・問路も出すか（はじめは大路だけ）
     @AppStorage("showAllRoads") private var showAllRoads = false
     @AppStorage("tieStyle") private var tieStyle: TieStyle = .dot
-    /// 罫線だけのモードで、結果を大きく出して読み上げるか（はじめはオフ）
-    @AppStorage("announceInRoadsOnly") private var announceResults = false
+    /// 結果を記録したら大きく出して読み上げる（ResultSplash.swift、はじめはオン）
+    @AppStorage(ResultAnnouncement.storageKey) private var announceResults = true
+    @State private var announcement: ResultAnnouncement?
 
     private var game: RoadGame { store.game }
     private var title: String { "\(game.title)・\(store.current.hands.count) 手" }
@@ -79,9 +78,7 @@ struct RoadGameView: View {
                         }
                         .pickerStyle(.menu)
                         Toggle("珠盤路・下三路・問路も見る", isOn: $showAllRoads)
-                        if onRecorded != nil {
-                            Toggle("結果を大きく出して読み上げる", isOn: $announceResults)
-                        }
+                        Toggle("結果を大きく出して読み上げる", isOn: $announceResults)
                     } label: {
                         Label("表示", systemImage: "slider.horizontal.3").labelStyle(.titleAndIcon)
                     }
@@ -116,6 +113,7 @@ struct RoadGameView: View {
             .sheet(isPresented: $showTips) { TipJarView() }
             .sheet(isPresented: $showRules) { RulesView() }
         }
+        .resultSplash($announcement)
     }
 
     /// 新しいシューを2回始めるごとに、応援のお願いを出す（「あとで」の1タップで閉じる）。
@@ -175,7 +173,12 @@ struct RoadGameView: View {
                 store.record(outcome, bankerPair: bankerPair, playerPair: playerPair)
                 bankerPair = false
                 playerPair = false
-                if let hand = store.current.hands.last { onRecorded?(hand, store.current.hands.count) }
+                if announceResults, let hand = store.current.hands.last {
+                    withAnimation(.easeOut(duration: 0.15)) {
+                        announcement = ResultAnnouncement(hand: hand, handNumber: store.current.hands.count)
+                    }
+                    ResultVoice.speak(hand)
+                }
             },
             onUndo: { store.undo() }
         )
