@@ -7,6 +7,7 @@ struct KeisenApp: App {
     @State private var blackjack = BlackjackStore()
     @State private var poker = PokerStore()
     @State private var scores = ScoreStore()
+    @State private var chips = ChipStore()
     @State private var tips = TipStore()
     @AppStorage("selectedTab") private var tab = "baccarat"
 
@@ -25,6 +26,9 @@ struct KeisenApp: App {
                 PokerView(store: poker)
                     .tabItem { Label("ポーカー", systemImage: "suit.club.fill") }
                     .tag("poker")
+                ChipView(store: chips)
+                    .tabItem { Label("チップ", systemImage: "circle.circle.fill") }
+                    .tag("chips")
                 ScoreSheetView(store: scores)
                     .tabItem { Label("点数表", systemImage: "list.number") }
                     .tag("scores")
