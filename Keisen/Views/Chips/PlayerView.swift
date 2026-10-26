@@ -143,7 +143,7 @@ private struct PlayerTableView: View {
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showManage = true } label: {
-                        Label("テーブル", systemImage: "person.3").labelStyle(.titleAndIcon)
+                        ToolbarTitle("テーブル", systemImage: "person.3")
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
@@ -155,7 +155,7 @@ private struct PlayerTableView: View {
                         Toggle("珠盤路・下三路も見る", isOn: $showAllRoads)
                         Toggle("結果を英語で読み上げる", isOn: $speakResults)
                     } label: {
-                        Label("表示", systemImage: "slider.horizontal.3").labelStyle(.titleAndIcon)
+                        ToolbarTitle("表示", systemImage: "slider.horizontal.3")
                     }
                 }
             }

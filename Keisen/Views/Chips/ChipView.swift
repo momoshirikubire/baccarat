@@ -128,18 +128,18 @@ private struct ChipTableView: View {
             if isHost {
                 ToolbarItem(placement: .topBarLeading) {
                     Button(role: .destructive) { confirmClose = true } label: {
-                        Label("テーブルを閉じる", systemImage: "xmark.circle").labelStyle(.titleAndIcon)
+                        ToolbarTitle("テーブルを閉じる", systemImage: "xmark.circle")
                     }
                 }
                 ToolbarItem(placement: .topBarLeading) {
                     Button { confirmRestart = true } label: {
-                        Label("持ち点に戻す", systemImage: "arrow.counterclockwise").labelStyle(.titleAndIcon)
+                        ToolbarTitle("持ち点に戻す", systemImage: "arrow.counterclockwise")
                     }
                 }
             } else {
                 ToolbarItem(placement: .topBarLeading) {
                     Button(role: .destructive) { store.leave() } label: {
-                        Label("テーブルから抜ける", systemImage: "rectangle.portrait.and.arrow.right").labelStyle(.titleAndIcon)
+                        ToolbarTitle("テーブルから抜ける", systemImage: "rectangle.portrait.and.arrow.right")
                     }
                 }
             }

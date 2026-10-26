@@ -111,7 +111,7 @@ struct ModeButton: View {
         Button {
             if chips.role == .none { mode = .choose } else { confirm = true }
         } label: {
-            Label("使い方", systemImage: "rectangle.2.swap").labelStyle(.titleAndIcon)
+            ToolbarTitle("使い方", systemImage: "rectangle.2.swap")
         }
         .accessibilityLabel("使い方を変える")
         .confirmationDialog(chips.role == .host ? "テーブルを閉じて、使い方を変えますか？" : "テーブルから抜けて、使い方を変えますか？",
@@ -126,5 +126,25 @@ struct ModeButton: View {
                  ? "つながっている人も抜けて、残高と履歴は消えます。"
                  : "あとで同じテーブルに参加し直すと、残りのチップから続けられます。")
         }
+    }
+}
+
+/// ツールバーのボタンの中身：アイコンと短い文字を並べる。
+/// ツールバーの中では Label(...).labelStyle(.titleAndIcon) でもアイコンだけになるので、自分で並べる。
+struct ToolbarTitle: View {
+    let title: String
+    let systemImage: String
+
+    init(_ title: String, systemImage: String) {
+        self.title = title
+        self.systemImage = systemImage
+    }
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(systemName: systemImage)
+            Text(title).font(.subheadline.weight(.semibold)).lineLimit(1).fixedSize()
+        }
+        .accessibilityElement(children: .combine)
     }
 }

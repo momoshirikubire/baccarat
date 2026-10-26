@@ -14,7 +14,7 @@
 - `Keisen.storekit`：チップのテスト用設定。スキームの Run → Options → StoreKit Configuration で選ぶとシミュレータで買える。
 
 ## フォルダ構成
-- ツールバーのボタンは、アイコンだけにせず文字をつける（`Label(...).labelStyle(.titleAndIcon)`：「使い方」「履歴」「表示」「新しいシュー」「テーブル」「テーブルを閉じる」「持ち点に戻す」「テーブルから抜ける」など）。
+- ツールバーのボタンは、アイコンだけにせず文字をつける（ツールバーの中では `Label(...).labelStyle(.titleAndIcon)` でもアイコンだけになるので、`ToolbarTitle`（`Views/ModeViews.swift`、アイコンと文字の HStack）を使う：「使い方」「履歴」「表示」「新しいシュー」「テーブル」「テーブルを閉じる」「持ち点に戻す」「テーブルから抜ける」など）。
 - 1.0 はバカラだけ（`App/KeisenApp.swift` はタブなしで `RootView` を出す）。v1.1 では起動したら最初に使い方を選ぶ（`Views/ModeViews.swift` の `AppMode`、`@AppStorage("appMode")` で覚えて次からその画面で始まる。左上の `ModeButton` でいつでも変えられ、テーブルを持っている・参加しているときは確かめてから閉じる／抜ける）：「罫線だけ」＝ `RoadGameView`（1.0 と同じ見た目。チップは出さない）、「テーブルを作る（勝敗を記録する）」＝ `DealerView`、「テーブルに参加する（プレイヤー）」＝ `PlayerView`。ドラゴンタイガー・ブラックジャック・ポーカー・点数表のコードは残してあり、あとのアップデートで TabView に戻して出す。右上の「応援」から応援画面を開ける（`.tipButton()`）。
 - 画面は横向きだけ（pbxproj の UISupportedInterfaceOrientations_iPhone）。横向き（verticalSizeClass が compact）では、大路のマスを画面の高さに収まる大きさにして入力盤を右端に置く。縦向きのレイアウトのコードも残してある。
 - バカラ画面は大路だけが基本（大きめのマス）。「珠盤路・下三路・問路も見る」で残りの罫線と入力盤の問路を出す（`@AppStorage("showAllRoads")`）。過去のシューは全部出す。

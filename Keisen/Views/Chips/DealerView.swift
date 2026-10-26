@@ -173,7 +173,7 @@ private struct DealerTableView: View {
                 ToolbarItem(placement: .topBarLeading) { ModeButton(chips: chips) }
                 ToolbarItem(placement: .topBarLeading) {
                     Button { showHistory = true } label: {
-                        Label("履歴", systemImage: "clock.arrow.circlepath").labelStyle(.titleAndIcon)
+                        ToolbarTitle("履歴", systemImage: "clock.arrow.circlepath")
                     }
                 }
                 ToolbarItem(placement: .topBarLeading) {
@@ -181,7 +181,7 @@ private struct DealerTableView: View {
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showManage = true } label: {
-                        Label("テーブル", systemImage: "person.3").labelStyle(.titleAndIcon)
+                        ToolbarTitle("テーブル", systemImage: "person.3")
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
@@ -193,12 +193,12 @@ private struct DealerTableView: View {
                         Toggle("珠盤路・下三路・問路も見る", isOn: $showAllRoads)
                         Toggle("結果を英語で読み上げる", isOn: $speakResults)
                     } label: {
-                        Label("表示", systemImage: "slider.horizontal.3").labelStyle(.titleAndIcon)
+                        ToolbarTitle("表示", systemImage: "slider.horizontal.3")
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { confirmNewShoe = true } label: {
-                        Label("新しいシュー", systemImage: "plus.rectangle.on.rectangle").labelStyle(.titleAndIcon)
+                        ToolbarTitle("新しいシュー", systemImage: "plus.rectangle.on.rectangle")
                     }
                 }
             }
