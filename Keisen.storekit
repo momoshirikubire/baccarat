@@ -1,0 +1,66 @@
+{
+  "identifier" : "4B6E7A21-0C1D-4F35-9B5A-7E2C3D4A5B01",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+    {
+      "displayPrice" : "160",
+      "familyShareable" : false,
+      "internalID" : "4B6E7A21-0C1D-4F35-9B5A-7E2C3D4A5B11",
+      "localizations" : [
+        {
+          "description" : "コーヒー1杯ぶんの応援",
+          "displayName" : "ちょっと応援",
+          "locale" : "ja"
+        }
+      ],
+      "productID" : "com.tadahonami.keisen.tip.small",
+      "referenceName" : "Tip Small",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "480",
+      "familyShareable" : false,
+      "internalID" : "4B6E7A21-0C1D-4F35-9B5A-7E2C3D4A5B12",
+      "localizations" : [
+        {
+          "description" : "ランチ1回ぶんの応援",
+          "displayName" : "しっかり応援",
+          "locale" : "ja"
+        }
+      ],
+      "productID" : "com.tadahonami.keisen.tip.medium",
+      "referenceName" : "Tip Medium",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "980",
+      "familyShareable" : false,
+      "internalID" : "4B6E7A21-0C1D-4F35-9B5A-7E2C3D4A5B13",
+      "localizations" : [
+        {
+          "description" : "開発をがっつり応援",
+          "displayName" : "めっちゃ応援",
+          "locale" : "ja"
+        }
+      ],
+      "productID" : "com.tadahonami.keisen.tip.large",
+      "referenceName" : "Tip Large",
+      "type" : "Consumable"
+    }
+  ],
+  "settings" : {
+    "_applicationInternalID" : "",
+    "_developerTeamID" : "",
+    "_locale" : "ja",
+    "_storefront" : "JPN"
+  },
+  "subscriptionGroups" : [
+
+  ],
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  }
+}
