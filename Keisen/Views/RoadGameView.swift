@@ -10,9 +10,8 @@ struct RoadGameView: View {
     @State private var showNudge = false
     @State private var showTips = false
     @Environment(TipStore.self) private var tips
-    /// 「新しいシュー」を押した回数と、最後に応援のお願いを出した時刻（応援のお願いを出しすぎないため）
+    /// 「新しいシュー」を押した回数（応援のお願いを出す間かくに使う）
     @AppStorage("newShoeCount") private var newShoeCount = 0
-    @AppStorage("lastNudgeAt") private var lastNudgeAt: Double = 0
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     /// 珠盤路・下三路・問路も出すか（はじめは大路だけ）
     @AppStorage("showAllRoads") private var showAllRoads = false
@@ -49,7 +48,7 @@ struct RoadGameView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button { showHistory = true } label: {
-                        Label("過去のシュー", systemImage: "clock.arrow.circlepath")
+                        Label("履歴", systemImage: "clock.arrow.circlepath").labelStyle(.titleAndIcon)
                     }
                 }
                 if isLandscape {
@@ -66,12 +65,12 @@ struct RoadGameView: View {
                         .pickerStyle(.menu)
                         Toggle("珠盤路・下三路・問路も見る", isOn: $showAllRoads)
                     } label: {
-                        Label("表示の設定", systemImage: "slider.horizontal.3")
+                        Label("表示", systemImage: "slider.horizontal.3").labelStyle(.titleAndIcon)
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { confirmNewShoe = true } label: {
-                        Label("新しいシュー", systemImage: "plus.square.on.square")
+                        Label("新しいシュー", systemImage: "plus.rectangle.on.rectangle").labelStyle(.titleAndIcon)
                     }
                 }
             }
@@ -100,14 +99,11 @@ struct RoadGameView: View {
         }
     }
 
-    /// 新しいシューを5回始めるごとに一度だけ、応援のお願いを出す。
-    /// 応援してくれた人には出さず、出すのは多くても1週間に1回まで。
+    /// 新しいシューを2回始めるごとに、応援のお願いを出す（「あとで」の1タップで閉じる）。
+    /// 応援してくれた人には、最後のチップから1年たつまで出さない。
     private func maybeNudge() {
         newShoeCount += 1
-        let week: TimeInterval = 7 * 24 * 60 * 60
-        guard newShoeCount % 5 == 0, tips.tipCount == 0,
-              Date().timeIntervalSince1970 - lastNudgeAt > week else { return }
-        lastNudgeAt = Date().timeIntervalSince1970
+        guard newShoeCount % 2 == 0, !tips.tippedWithinYear else { return }
         // 確認のダイアログが閉じきってから出す
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { showNudge = true }
     }

@@ -99,7 +99,7 @@ struct TipButton: ViewModifier {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showTips = true } label: {
-                        Label("応援する", systemImage: "heart")
+                        Label("応援", systemImage: "gift").labelStyle(.titleAndIcon)
                     }
                 }
             }

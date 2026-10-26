@@ -32,6 +32,14 @@ final class TipStore {
     /// これまでに応援してくれた回数（この端末だけ）
     private(set) var tipCount = UserDefaults.standard.integer(forKey: "tipCount")
 
+    /// 最後にチップを送ってくれた時刻（この端末だけ）
+    private var lastTipAt = UserDefaults.standard.double(forKey: "lastTipAt")
+
+    /// 1年以内にチップを送ってくれたか（応援のお願いを出さないため）
+    var tippedWithinYear: Bool {
+        lastTipAt > 0 && Date().timeIntervalSince1970 - lastTipAt < 365 * 24 * 60 * 60
+    }
+
     @ObservationIgnored private var updates: Task<Void, Never>?
 
     init() {
@@ -68,6 +76,8 @@ final class TipStore {
                 await transaction.finish()
                 tipCount += 1
                 UserDefaults.standard.set(tipCount, forKey: "tipCount")
+                lastTipAt = Date().timeIntervalSince1970
+                UserDefaults.standard.set(lastTipAt, forKey: "lastTipAt")
                 phase = .thanks
             case .success(.unverified):
                 phase = .failed("購入を確認できませんでした。時間をおいてもう一度お試しください。")
