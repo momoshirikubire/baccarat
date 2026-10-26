@@ -211,6 +211,8 @@ struct InputDeck: View {
     var showAsk = true
     /// 横向きで大路だけのときは細い列にする。集計をここに出し、結果のボタンは縦に並べる
     var narrowShoe: Shoe? = nil
+    /// ペアと「1つ戻す」のボタンの高さ（親の画面では押しやすいように高くする）
+    var smallButtonHeight: CGFloat = 38
     var isSample = false
     let onResult: (Outcome) -> Void
     let onUndo: () -> Void
@@ -290,7 +292,7 @@ struct InputDeck: View {
             Label("1つ戻す", systemImage: "arrow.uturn.backward")
                 .labelStyle(.titleAndIcon)
                 .font(.footnote.bold())
-                .frame(maxWidth: .infinity, minHeight: 38)
+                .frame(maxWidth: .infinity, minHeight: smallButtonHeight)
                 .background(Theme.deckButton, in: RoundedRectangle(cornerRadius: 10))
         }
         .disabled(!canUndo)
@@ -337,7 +339,7 @@ struct InputDeck: View {
             Text(title)
                 .font(.footnote.bold())
                 .foregroundStyle(isOn.wrappedValue ? .white : Theme.deckInk)
-                .frame(maxWidth: .infinity, minHeight: 38)
+                .frame(maxWidth: .infinity, minHeight: smallButtonHeight)
                 .background(isOn.wrappedValue ? color : Theme.deckButton, in: RoundedRectangle(cornerRadius: 10))
         }
         .accessibilityAddTraits(isOn.wrappedValue ? .isSelected : [])

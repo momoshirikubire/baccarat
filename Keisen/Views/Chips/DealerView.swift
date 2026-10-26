@@ -229,13 +229,23 @@ private struct DealerSetupView: View {
         .buttonStyle(PressStyle())
     }
 
+    /// 行のどこを押しても切り替わるトグル（スイッチだけだと小さくて押しにくい）
     private func toggle(_ title: String, detail: String, isOn: Binding<Bool>) -> some View {
-        Toggle(isOn: isOn) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(.subheadline.bold())
-                Text(detail).font(.caption).foregroundStyle(Theme.muted)
+        Button { isOn.wrappedValue.toggle() } label: {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title).font(.subheadline.bold()).foregroundStyle(Theme.ink)
+                    Text(detail).font(.caption).foregroundStyle(Theme.muted)
+                }
+                Spacer(minLength: 8)
+                Toggle("", isOn: isOn).labelsHidden().allowsHitTesting(false)
             }
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityValue(isOn.wrappedValue ? "オン" : "オフ")
+        .accessibilityAddTraits(.isToggle)
     }
 
     private var chosenLimits: (min: Int, max: Int) {
@@ -277,7 +287,7 @@ private struct DealerTableView: View {
         if closed {
             HStack(spacing: 6) {
                 BetStatusPill(closed: true)
-                Text("勝敗を押すと次の手の受付").font(.caption2).foregroundStyle(Theme.deckInk.opacity(0.7))
+                Text("勝敗で次の手へ").font(.caption2).foregroundStyle(Theme.deckInk.opacity(0.7))
                 Spacer(minLength: 0)
             }
         } else {
@@ -332,6 +342,7 @@ private struct DealerTableView: View {
                             canUndo: shoe.canUndo,
                             side: true,
                             showAsk: showAllRoads,
+                            smallButtonHeight: 44,
                             onResult: { outcome in
                                 shoe.record(outcome, bankerPair: bankerPair, playerPair: playerPair)
                                 bankerPair = false
@@ -352,6 +363,8 @@ private struct DealerTableView: View {
                             }
                         )
                     }
+                    // ペアのボタンがホームインジケータに寄りすぎないように、下に余白をとる
+                    .padding(.bottom, 10)
                     .frame(width: isPlaying ? 240 : 300)
                     .frame(maxHeight: .infinity, alignment: .bottom)
                     .background(Theme.deck.ignoresSafeArea())
@@ -457,20 +470,35 @@ private struct DealerTableView: View {
     /// 記録係が自分でもベットするときの列。勝敗のボタンと取り違えないように、明るい背景と見出しで分ける。
     private func myBetColumn(_ table: ChipTable, _ me: ChipMember) -> some View {
         VStack(spacing: 6) {
-            Text("あなたのベット")
-                .font(.caption.bold())
-                .frame(maxWidth: .infinity, alignment: .leading)
-            BetPad(spots: table.bets[me.id] ?? [:], balance: me.balance, commission: table.bankerCommission,
-                   previous: table.lastRound?.bets[me.id],
-                   minBet: table.minBet, maxBet: table.maxBet, startingChips: table.startingChips,
-                   compact: true, closed: table.betsClosed) { spots in
-                chips.placeBet(spots, for: me.id)
+            HStack {
+                Text("あなたのベット").font(.caption.bold())
+                Spacer(minLength: 4)
+                // 親は自分の分の追加（リバイ）をお願いせずにそのまま入れられる
+                Button { startRebuy(me) } label: {
+                    Label("ポイントを追加", systemImage: "plus.circle.fill")
+                        .font(.caption.bold())
+                        .foregroundStyle(.black)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Theme.warning, in: Capsule())
+                }
             }
+            // 締め切りの札などで高くなっても上の帯を押し上げないように、盤だけスクロールできるようにして下に寄せる
+            ScrollView {
+                BetPad(spots: table.bets[me.id] ?? [:], balance: me.balance, commission: table.bankerCommission,
+                       previous: table.lastRound?.bets[me.id],
+                       minBet: table.minBet, maxBet: table.maxBet, startingChips: table.startingChips,
+                       compact: true, closed: table.betsClosed) { spots in
+                    chips.placeBet(spots, for: me.id)
+                }
+            }
+            .defaultScrollAnchor(.bottom)
+            .scrollBounceBehavior(.basedOnSize)
         }
         .foregroundStyle(Theme.deckInk)
         .padding(10)
         .frame(width: 280)
-        .frame(maxHeight: .infinity, alignment: .bottom)
+        .frame(maxHeight: .infinity)
         .background(Color(light: 0x2F3A34, dark: 0x1A2420))
     }
 

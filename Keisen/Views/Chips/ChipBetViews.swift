@@ -202,7 +202,8 @@ struct BetPad: View {
     /// 締め切り中は押せなくする
     var closed = false
     let onChange: ([BetSpot: Int]) -> Void
-    @State private var selected: BetSpot = .banker
+    /// 金額を選んでいる場所（押すとシートが開く）
+    @State private var editing: BetSpot?
 
     /// 持ち点の 1/100・1/20・1/10・1/2 をきりのいい数に（持ち点 1,000 なら +10 / +50 / +100 / +500、10,000 なら +100 / +500 / +1,000 / +5,000）
     private var steps: [Int] {
@@ -225,11 +226,20 @@ struct BetPad: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             if closed {
-                Label("締め切り中。勝敗が出ると次の手の受付が始まります", systemImage: "lock.fill")
-                    .font(.caption.bold())
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity, minHeight: 26)
-                    .background(Theme.banker, in: RoundedRectangle(cornerRadius: 8))
+                // 狭い列でも切れないように、見出しと説明を2行に分ける
+                VStack(spacing: 1) {
+                    Label("締め切り中", systemImage: "lock.fill").font(.caption.bold())
+                    Text("勝敗を記録すると受付に戻ります")
+                        .font(.caption2)
+                        .opacity(0.85)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .foregroundStyle(.white)
+                .padding(.vertical, 4)
+                .padding(.horizontal, 6)
+                .frame(maxWidth: .infinity)
+                .background(Theme.banker, in: RoundedRectangle(cornerRadius: 8))
             }
             HStack(spacing: 6) {
                 figure("残高", balance)
@@ -247,15 +257,6 @@ struct BetPad: View {
                     spotButton(.playerPair, height: compact ? 32 : 40)
                 }
                 HStack(spacing: 6) {
-                    ForEach(steps, id: \.self) { step in
-                        let current = spots[selected] ?? 0
-                        let next = clamp(current + step)
-                        padButton("+\(step.formatted())") { change(selected, to: next) }
-                            .disabled(next <= current || balance - staked < next - current)
-                    }
-                    padButton("0") { change(selected, to: 0) }
-                }
-                HStack(spacing: 6) {
                     padButton("前の手と同じ") { set(previous ?? [:]) }
                         .disabled(previous?.isEmpty ?? true)
                     padButton("ベットを消す") { set([:]) }
@@ -267,6 +268,16 @@ struct BetPad: View {
         }
         .foregroundStyle(Theme.deckInk)
         .disabled(closed)
+        .sheet(item: $editing) { spot in
+            SpotAmountSheet(spot: spot, current: spots[spot] ?? 0,
+                            available: balance - staked + (spots[spot] ?? 0),
+                            minBet: minBet, maxBet: maxBet, steps: steps, commission: commission) { amount in
+                change(spot, to: amount)
+            }
+            // 盤の明るい文字の色を引き継がないように
+            .foregroundStyle(Theme.ink)
+            .tint(Theme.ink)
+        }
     }
 
     private func figure(_ title: String, _ value: Int) -> some View {
@@ -281,8 +292,7 @@ struct BetPad: View {
 
     private func spotButton(_ spot: BetSpot, height: CGFloat) -> some View {
         let amount = spots[spot] ?? 0
-        let isSelected = selected == spot
-        return Button { selected = spot } label: {
+        return Button { editing = spot } label: {
             VStack(spacing: 1) {
                 Text(spot.title).font(height > 44 ? .headline : .footnote.bold()).lineLimit(1).minimumScaleFactor(0.7)
                 Text(amount > 0 ? "\(amount.formatted()) pt" : spot.odds(commission: commission))
@@ -291,11 +301,11 @@ struct BetPad: View {
             }
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity, minHeight: height)
-            .background(Self.color(spot).opacity(amount > 0 || isSelected ? 1 : 0.5), in: RoundedRectangle(cornerRadius: 12))
-            .overlay(RoundedRectangle(cornerRadius: 12).stroke(.white, lineWidth: isSelected ? 3 : 0))
+            .background(Self.color(spot).opacity(amount > 0 ? 1 : 0.55), in: RoundedRectangle(cornerRadius: 12))
+            .overlay(RoundedRectangle(cornerRadius: 12).stroke(.white, lineWidth: amount > 0 ? 2 : 0))
         }
         .buttonStyle(PressStyle())
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .accessibilityHint("押すと金額を選べます")
     }
 
     private func padButton(_ title: String, action: @escaping () -> Void) -> some View {
@@ -314,8 +324,12 @@ struct BetPad: View {
         set(d)
     }
 
-    /// 0 でなければ、下限以上・上限以下にそろえる（+10 を押しても下限に届くように、上限で止まるように）
     private func clamp(_ amount: Int) -> Int {
+        BetPad.clamp(amount, minBet: minBet, maxBet: maxBet)
+    }
+
+    /// 0 でなければ、下限以上・上限以下にそろえる（+10 を押しても下限に届くように、上限で止まるように）
+    static func clamp(_ amount: Int, minBet: Int, maxBet: Int) -> Int {
         guard amount > 0 else { return 0 }
         var a = amount
         if minBet > 0 { a = max(a, minBet) }
@@ -336,6 +350,114 @@ struct BetPad: View {
         case .player, .playerPair: Theme.player
         case .tie: Theme.tie
         }
+    }
+}
+
+/// BANKER などを押したときに開く、その場所の金額を選ぶシート。「決定」で送り、「やめる」では何も変えない。
+private struct SpotAmountSheet: View {
+    let spot: BetSpot
+    let current: Int
+    /// この場所に置ける最大（使える額＋いまこの場所に置いている額）
+    let available: Int
+    let minBet: Int
+    let maxBet: Int
+    let steps: [Int]
+    let commission: Bool
+    let onDecide: (Int) -> Void
+    @State private var amount: Int
+    @Environment(\.dismiss) private var dismiss
+
+    init(spot: BetSpot, current: Int, available: Int, minBet: Int, maxBet: Int, steps: [Int], commission: Bool,
+         onDecide: @escaping (Int) -> Void) {
+        self.spot = spot
+        self.current = current
+        self.available = available
+        self.minBet = minBet
+        self.maxBet = maxBet
+        self.steps = steps
+        self.commission = commission
+        self.onDecide = onDecide
+        _amount = State(initialValue: current)
+    }
+
+    /// 置ける上限（上限と使える額の小さいほう）
+    private var cap: Int { maxBet > 0 ? min(maxBet, available) : available }
+
+    var body: some View {
+        NavigationStack {
+            HStack(alignment: .center, spacing: 20) {
+                // 左：場所と金額
+                VStack(spacing: 8) {
+                    Text(spot.title)
+                        .font(.title2.bold())
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 6)
+                        .background(BetPad.color(spot), in: Capsule())
+                    Text("勝つと \(spot.odds(commission: commission))").font(.caption).foregroundStyle(Theme.muted)
+                    Text("\(amount.formatted()) pt")
+                        .font(.system(size: 44, weight: .heavy).monospacedDigit())
+                        .foregroundStyle(Theme.ink)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                    Text("使える \(available.formatted())\(minBet > 0 ? "・下限 \(minBet.formatted())" : "")\(maxBet > 0 ? "・上限 \(maxBet.formatted())" : "")")
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(Theme.muted)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                    if amount > 0, minBet > 0, amount < minBet {
+                        Text("下限より少ないので置けません").font(.caption.bold()).foregroundStyle(Theme.banker)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+
+                // 右：金額のボタン
+                VStack(spacing: 8) {
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+                        ForEach(steps, id: \.self) { step in
+                            let next = BetPad.clamp(amount + step, minBet: minBet, maxBet: maxBet)
+                            amountButton("+\(step.formatted())") { amount = min(next, cap) }
+                                .disabled(min(next, cap) <= amount)
+                        }
+                    }
+                    HStack(spacing: 8) {
+                        amountButton("0 にする") { amount = 0 }
+                            .disabled(amount == 0)
+                        amountButton("置けるだけ") { amount = cap }
+                            .disabled(cap <= amount || (minBet > 0 && cap < minBet))
+                    }
+                }
+                .frame(maxWidth: .infinity)
+            }
+            .padding(20)
+            .frame(maxHeight: .infinity)
+            .background(Theme.background)
+            .navigationTitle("\(spot.title) のベット")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("やめる") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("決定") {
+                        onDecide(amount)
+                        dismiss()
+                    }
+                    .bold()
+                    .disabled(amount == current || (amount > 0 && minBet > 0 && amount < minBet))
+                }
+            }
+        }
+    }
+
+    private func amountButton(_ title: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.headline.monospacedDigit())
+                .foregroundStyle(Theme.ink)
+                .frame(maxWidth: .infinity, minHeight: 48)
+                .background(Theme.sheet, in: RoundedRectangle(cornerRadius: 12))
+                .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.line))
+        }
+        .buttonStyle(PressStyle())
     }
 }
 
