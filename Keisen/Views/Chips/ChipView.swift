@@ -406,18 +406,16 @@ private struct MoveSheet: View {
                             .font(.title2.bold().monospacedDigit())
                         Text("pt").foregroundStyle(.secondary)
                     }
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 8) {
-                            ForEach(Self.steps, id: \.self) { step in
-                                Button("+\(step)") { amount = (amount ?? 0) + step }
-                                    .buttonStyle(.bordered)
-                            }
-                            if let available, available > 0 {
-                                Button("全部") { amount = available }.buttonStyle(.bordered)
-                            }
-                            Button("0") { amount = nil }.buttonStyle(.bordered)
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 4), spacing: 8) {
+                        ForEach(Self.steps, id: \.self) { step in
+                            stepButton("+\(step.formatted())") { amount = (amount ?? 0) + step }
                         }
+                        if let available, available > 0 {
+                            stepButton("全部") { amount = available }
+                        }
+                        stepButton("0") { amount = nil }
                     }
+                    .padding(.vertical, 4)
                 }
             }
             .navigationTitle("チップを動かす")
@@ -436,6 +434,15 @@ private struct MoveSheet: View {
                 if to == from, let other = destinations.first(where: { $0 != from }) { to = other }
             }
         }
-        .presentationDetents([.medium, .large])
+        .presentationDetents([.large])
+    }
+
+    private func stepButton(_ title: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.subheadline.bold().monospacedDigit())
+                .frame(maxWidth: .infinity, minHeight: 36)
+        }
+        .buttonStyle(.bordered)
     }
 }
