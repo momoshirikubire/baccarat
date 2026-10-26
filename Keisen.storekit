@@ -48,6 +48,21 @@
       "productID" : "com.tadahonami.keisen.tip.large",
       "referenceName" : "Tip Large",
       "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "5000",
+      "familyShareable" : false,
+      "internalID" : "4B6E7A21-0C1D-4F35-9B5A-7E2C3D4A5B14",
+      "localizations" : [
+        {
+          "description" : "開発をとことん応援",
+          "displayName" : "特大応援",
+          "locale" : "ja"
+        }
+      ],
+      "productID" : "com.tadahonami.keisen.tip.huge",
+      "referenceName" : "Tip Huge",
+      "type" : "Consumable"
     }
   ],
   "settings" : {
