@@ -38,8 +38,10 @@ struct RoadGameView: View {
                     HStack(spacing: 0) {
                         // 大路の6段が画面の高さに収まるマスの大きさにする（集計の段・見出し・余白を引く）
                         GeometryReader { geo in
+                            // ツールバーの下にもぐる部分があれば、それも引く
+                            let height = geo.size.height - geo.safeAreaInsets.top - geo.safeAreaInsets.bottom
                             board(scale: 1.35,
-                                  fitCell: max(22, min(roadsOnly ? 80 : 42, (geo.size.height - (roadsOnly ? 52 : 130)) / CGFloat(Roads.rows))),
+                                  fitCell: max(22, min(roadsOnly ? 80 : 42, (height - (roadsOnly ? 64 : 130)) / CGFloat(Roads.rows))),
                                   compact: roadsOnly)
                         }
                         deck(side: true)
@@ -135,7 +137,8 @@ struct RoadGameView: View {
     private func board(scale: CGFloat, fitCell: CGFloat? = nil, compact: Bool = false) -> some View {
         ScrollView {
             VStack(spacing: 10) {
-                if store.isSample {
+                // 横向きで大路だけのときは、例のシューのお知らせは右の列に短く出す（大路を高さいっぱいにするため）
+                if store.isSample && !compact {
                     Text("いま表示しているのは例のシューです。1手目を記録すると消えて、あなたの記録が始まります。")
                         .font(.footnote)
                         .foregroundStyle(Theme.muted)
@@ -181,6 +184,7 @@ struct RoadGameView: View {
             side: side,
             showAsk: showAllRoads,
             narrowShoe: side && !showAllRoads ? store.current : nil,
+            isSample: store.isSample,
             onResult: { outcome in
                 store.record(outcome, bankerPair: bankerPair, playerPair: playerPair)
                 bankerPair = false
@@ -209,6 +213,7 @@ struct InputDeck: View {
     var showAsk = true
     /// 横向きで大路だけのときは細い列にする。集計をここに出し、結果のボタンは縦に並べる
     var narrowShoe: Shoe? = nil
+    var isSample = false
     let onResult: (Outcome) -> Void
     let onUndo: () -> Void
 
@@ -229,19 +234,33 @@ struct InputDeck: View {
     }
 
     private func narrowBody(_ shoe: Shoe) -> some View {
-        VStack(spacing: 8) {
+        // 画面の低い機種でも収まるように、結果のボタンは 36〜64pt のあいだで伸び縮みさせる
+        VStack(spacing: 6) {
             MiniStats(game: game, shoe: shoe)
-            Spacer(minLength: 0)
+            if isSample {
+                Text("いまは例のシューです。1手目を記録すると消えます。")
+                    .font(.caption2)
+                    .opacity(0.75)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             resultButton(.banker)
             resultButton(.player)
             resultButton(.tie)
-            if game.hasPairs {
-                HStack(spacing: 8) {
+            HStack(spacing: 6) {
+                if game.hasPairs {
                     toggle("B PAIR", isOn: $bankerPair, color: Theme.banker)
                     toggle("P PAIR", isOn: $playerPair, color: Theme.player)
                 }
+                Button(action: onUndo) {
+                    Image(systemName: "arrow.uturn.backward")
+                        .font(.footnote.bold())
+                        .frame(maxWidth: .infinity, minHeight: 34)
+                        .background(Theme.deckButton, in: RoundedRectangle(cornerRadius: 10))
+                }
+                .disabled(!canUndo)
+                .opacity(canUndo ? 1 : 0.5)
+                .accessibilityLabel("1つ戻す")
             }
-            undoButton
         }
     }
 
@@ -308,7 +327,8 @@ struct InputDeck: View {
                 Text(letter == bead ? bead : "\(letter) \(bead)").font(.caption2).opacity(0.85)
             }
             .foregroundStyle(.white)
-            .frame(maxWidth: .infinity, minHeight: narrowShoe != nil ? 50 : side ? 84 : 58)
+            .frame(maxWidth: .infinity, minHeight: narrowShoe != nil ? 36 : side ? 84 : 58,
+                   maxHeight: narrowShoe != nil ? 64 : nil)
             .background(Theme.color(outcome), in: RoundedRectangle(cornerRadius: 12))
         }
         .buttonStyle(PressStyle())
@@ -334,7 +354,7 @@ struct MiniStats: View {
     var body: some View {
         let c = shoe.count
         let n = shoe.hands.count
-        VStack(spacing: 3) {
+        VStack(spacing: 2) {
             row(game.name(.banker), c.banker, n, Theme.banker)
             row(game.name(.player), c.player, n, Theme.player)
             row(game.name(.tie), c.tie, n, Theme.tie)
@@ -348,7 +368,8 @@ struct MiniStats: View {
                 .opacity(0.8)
             }
         }
-        .padding(8)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
         .background(Theme.deckButton, in: RoundedRectangle(cornerRadius: 8))
         .accessibilityElement(children: .combine)
     }
