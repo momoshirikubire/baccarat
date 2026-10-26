@@ -97,17 +97,41 @@ struct DeveloperNote: View {
                     .overlay(Circle().stroke(Theme.line))
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("桃尻くびれちゃんが、ひとりで作っています").font(.subheadline.bold())
-                    // SNS のプロフィールだけにつなぐ（投げ銭などアプリの外での支払いには案内しない）
-                    Link("Instagram @momoshiri_kubire", destination: URL(string: "https://www.instagram.com/momoshiri_kubire/")!)
-                        .font(.caption)
+                    Text("広告なしで続けたい！").font(.headline)
+                    Text("作った人：桃尻くびれちゃん").font(.caption).foregroundStyle(.secondary)
                 }
             }
-            Text("登録料も端末も自費で、広告なしで続けています。気に入ったら応援してもらえるとうれしいです。チップを送らなくても、すべての機能を使えます。")
+            Text("画面をすっきり使ってほしくて、広告は入れていません。App Store の登録料は毎年自費なので、応援してもらえると、続ける力と次のアップデートの力になります🍑")
+                .font(.subheadline)
+                .fixedSize(horizontal: false, vertical: true)
+            Text("チップを送らなくても、すべての機能を使えます。")
                 .font(.caption)
                 .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
+            // SNS のプロフィールだけにつなぐ（投げ銭などアプリの外での支払いには案内しない）
+            HStack(spacing: 8) {
+                snsButton("Instagram", systemImage: "camera.fill",
+                          url: "https://www.instagram.com/momoshiri_kubire/",
+                          color: Color(red: 0.88, green: 0.19, blue: 0.47))
+                snsButton("TikTok", systemImage: "music.note",
+                          url: "https://www.tiktok.com/@momoshiri_kubire",
+                          color: .black)
+            }
+            Text("どちらも @momoshiri_kubire")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity)
         }
+    }
+
+    private func snsButton(_ title: String, systemImage: String, url: String, color: Color) -> some View {
+        Link(destination: URL(string: url)!) {
+            Label(title, systemImage: systemImage)
+                .font(.footnote.bold())
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.borderedProminent)
+        .buttonBorderShape(.capsule)
+        .tint(color)
     }
 }
 
