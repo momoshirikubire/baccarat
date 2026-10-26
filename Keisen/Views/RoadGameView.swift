@@ -17,7 +17,7 @@ struct RoadGameView: View {
     @AppStorage("newShoeCount") private var newShoeCount = 0
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     /// 珠盤路・下三路・問路も出すか（はじめは大路だけ）
-    @AppStorage("showAllRoads") private var showAllRoads = false
+    @AppStorage("roads.showAll") private var showAllRoads = false
     @AppStorage("tieStyle") private var tieStyle: TieStyle = .dot
     /// 結果を記録したら大きく出して読み上げる（ResultSplash.swift、はじめはオン）
     @AppStorage(ResultAnnouncement.storageKey) private var announceResults = true
@@ -33,13 +33,17 @@ struct RoadGameView: View {
         NavigationStack {
             Group {
                 if isLandscape {
+                    // 大路だけのときは、集計を右の列に移して入力盤を細くし、そのぶん大路を大きくする
+                    let roadsOnly = !showAllRoads
                     HStack(spacing: 0) {
                         // 大路の6段が画面の高さに収まるマスの大きさにする（集計の段・見出し・余白を引く）
                         GeometryReader { geo in
-                            board(scale: 1.35, fitCell: max(22, min(42, (geo.size.height - 130) / CGFloat(Roads.rows))))
+                            board(scale: 1.35,
+                                  fitCell: max(22, min(roadsOnly ? 80 : 42, (geo.size.height - (roadsOnly ? 52 : 130)) / CGFloat(Roads.rows))),
+                                  compact: roadsOnly)
                         }
                         deck(side: true)
-                            .frame(width: 300)
+                            .frame(width: roadsOnly ? 200 : 300)
                             .frame(maxHeight: .infinity)
                             .background(Theme.deck.ignoresSafeArea())
                     }
@@ -125,7 +129,8 @@ struct RoadGameView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { showNudge = true }
     }
 
-    private func board(scale: CGFloat, fitCell: CGFloat? = nil) -> some View {
+    /// compact：横向きで大路だけのとき。集計と「も見る」ボタンは右の列と「表示」に任せて、大路だけを置く
+    private func board(scale: CGFloat, fitCell: CGFloat? = nil, compact: Bool = false) -> some View {
         ScrollView {
             VStack(spacing: 10) {
                 if store.isSample {
@@ -136,19 +141,23 @@ struct RoadGameView: View {
                         .padding(10)
                         .background(Theme.sheet, in: RoundedRectangle(cornerRadius: 8))
                 }
-                StatsBar(game: game, shoe: store.current)
-                RoadsBoard(game: game, hands: store.current.hands, scale: scale, showAll: showAllRoads, fitCell: fitCell)
-                Button {
-                    withAnimation(.easeOut(duration: 0.2)) { showAllRoads.toggle() }
-                } label: {
-                    Label(showAllRoads ? "大路だけにする" : "珠盤路・下三路・問路も見る",
-                          systemImage: showAllRoads ? "chevron.up" : "chevron.down")
-                        .font(.footnote.bold())
-                        .frame(maxWidth: .infinity, minHeight: 36)
+                if !compact {
+                    StatsBar(game: game, shoe: store.current)
                 }
-                .foregroundStyle(Theme.muted)
+                RoadsBoard(game: game, hands: store.current.hands, scale: scale, showAll: showAllRoads, fitCell: fitCell)
+                if !compact {
+                    Button {
+                        withAnimation(.easeOut(duration: 0.2)) { showAllRoads.toggle() }
+                    } label: {
+                        Label(showAllRoads ? "大路だけにする" : "珠盤路・下三路・問路も見る",
+                              systemImage: showAllRoads ? "chevron.up" : "chevron.down")
+                            .font(.footnote.bold())
+                            .frame(maxWidth: .infinity, minHeight: 36)
+                    }
+                    .foregroundStyle(Theme.muted)
+                }
             }
-            .padding(12)
+            .padding(compact ? 8 : 12)
         }
         .background(Theme.background)
     }
@@ -169,6 +178,7 @@ struct RoadGameView: View {
             canUndo: store.canUndo,
             side: side,
             showAsk: showAllRoads,
+            narrowShoe: side && !showAllRoads ? store.current : nil,
             onResult: { outcome in
                 store.record(outcome, bankerPair: bankerPair, playerPair: playerPair)
                 bankerPair = false
@@ -195,10 +205,45 @@ struct InputDeck: View {
     var side = false
     /// 問路（次が B / P のときに下三路に付く印）を出すか
     var showAsk = true
+    /// 横向きで大路だけのときは細い列にする。集計をここに出し、結果のボタンは縦に並べる
+    var narrowShoe: Shoe? = nil
     let onResult: (Outcome) -> Void
     let onUndo: () -> Void
 
     var body: some View {
+        Group {
+            if let narrowShoe {
+                narrowBody(narrowShoe)
+            } else {
+                wideBody
+            }
+        }
+        .foregroundStyle(Theme.deckInk)
+        .padding(.horizontal, narrowShoe == nil ? 12 : 10)
+        .padding(.top, 10)
+        .padding(.bottom, 6)
+        .background(Theme.deck.ignoresSafeArea(edges: side ? [.bottom, .trailing] : .bottom))
+        .sensoryFeedback(.impact(weight: .light), trigger: hands.count)
+    }
+
+    private func narrowBody(_ shoe: Shoe) -> some View {
+        VStack(spacing: 8) {
+            MiniStats(game: game, shoe: shoe)
+            Spacer(minLength: 0)
+            resultButton(.banker)
+            resultButton(.player)
+            resultButton(.tie)
+            if game.hasPairs {
+                HStack(spacing: 8) {
+                    toggle("B PAIR", isOn: $bankerPair, color: Theme.banker)
+                    toggle("P PAIR", isOn: $playerPair, color: Theme.player)
+                }
+            }
+            undoButton
+        }
+    }
+
+    private var wideBody: some View {
         VStack(spacing: 8) {
             if showAsk {
                 HStack(spacing: 8) {
@@ -216,23 +261,21 @@ struct InputDeck: View {
                     toggle("B PAIR", isOn: $bankerPair, color: Theme.banker)
                     toggle("P PAIR", isOn: $playerPair, color: Theme.player)
                 }
-                Button(action: onUndo) {
-                    Label("1つ戻す", systemImage: "arrow.uturn.backward")
-                        .labelStyle(.titleAndIcon)
-                        .font(.footnote.bold())
-                        .frame(maxWidth: .infinity, minHeight: 38)
-                        .background(Theme.deckButton, in: RoundedRectangle(cornerRadius: 10))
-                }
-                .disabled(!canUndo)
-                .opacity(canUndo ? 1 : 0.5)
+                undoButton
             }
         }
-        .foregroundStyle(Theme.deckInk)
-        .padding(.horizontal, 12)
-        .padding(.top, 10)
-        .padding(.bottom, 6)
-        .background(Theme.deck.ignoresSafeArea(edges: side ? [.bottom, .trailing] : .bottom))
-        .sensoryFeedback(.impact(weight: .light), trigger: hands.count)
+    }
+
+    private var undoButton: some View {
+        Button(action: onUndo) {
+            Label("1つ戻す", systemImage: "arrow.uturn.backward")
+                .labelStyle(.titleAndIcon)
+                .font(.footnote.bold())
+                .frame(maxWidth: .infinity, minHeight: 38)
+                .background(Theme.deckButton, in: RoundedRectangle(cornerRadius: 10))
+        }
+        .disabled(!canUndo)
+        .opacity(canUndo ? 1 : 0.5)
     }
 
     private func ask(_ outcome: Outcome) -> some View {
@@ -263,7 +306,7 @@ struct InputDeck: View {
                 Text(letter == bead ? bead : "\(letter) \(bead)").font(.caption2).opacity(0.85)
             }
             .foregroundStyle(.white)
-            .frame(maxWidth: .infinity, minHeight: side ? 84 : 58)
+            .frame(maxWidth: .infinity, minHeight: narrowShoe != nil ? 50 : side ? 84 : 58)
             .background(Theme.color(outcome), in: RoundedRectangle(cornerRadius: 12))
         }
         .buttonStyle(PressStyle())
@@ -278,6 +321,47 @@ struct InputDeck: View {
                 .background(isOn.wrappedValue ? color : Theme.deckButton, in: RoundedRectangle(cornerRadius: 10))
         }
         .accessibilityAddTraits(isOn.wrappedValue ? .isSelected : [])
+    }
+}
+
+/// 細い入力盤の上に出す集計（BANKER・PLAYER・TIE の回数と割合、ペアの回数）
+struct MiniStats: View {
+    let game: RoadGame
+    let shoe: Shoe
+
+    var body: some View {
+        let c = shoe.count
+        let n = shoe.hands.count
+        VStack(spacing: 3) {
+            row(game.name(.banker), c.banker, n, Theme.banker)
+            row(game.name(.player), c.player, n, Theme.player)
+            row(game.name(.tie), c.tie, n, Theme.tie)
+            if game.hasPairs {
+                HStack {
+                    Text("B PAIR \(c.bankerPair)")
+                    Spacer()
+                    Text("P PAIR \(c.playerPair)")
+                }
+                .font(.caption2.monospacedDigit())
+                .opacity(0.8)
+            }
+        }
+        .padding(8)
+        .background(Theme.deckButton, in: RoundedRectangle(cornerRadius: 8))
+        .accessibilityElement(children: .combine)
+    }
+
+    private func row(_ name: String, _ v: Int, _ n: Int, _ color: Color) -> some View {
+        HStack(spacing: 6) {
+            Circle().fill(color).frame(width: 8, height: 8)
+            Text(name).font(.caption.bold())
+            Spacer()
+            Text("\(v)").font(.subheadline.monospacedDigit().bold())
+            Text(n == 0 ? "–" : "\(Int((Double(v) / Double(n) * 100).rounded()))%")
+                .font(.caption2.monospacedDigit())
+                .frame(width: 32, alignment: .trailing)
+                .opacity(0.8)
+        }
     }
 }
 
