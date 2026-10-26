@@ -122,7 +122,7 @@ private struct SettlementLine: View {
         VStack(alignment: .leading, spacing: 2) {
             HStack(spacing: 8) {
                 Text("第\(round.handNumber)手").font(.caption.bold())
-                Text(RoadGame.baccarat.name(round.hand.outcome))
+                Text(round.hand.outcome == .banker ? "BANKER" : round.hand.outcome == .player ? "PLAYER" : "TIE")
                     .font(.caption.bold())
                     .foregroundStyle(.white)
                     .padding(.horizontal, 6)

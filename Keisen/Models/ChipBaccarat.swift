@@ -72,11 +72,11 @@ enum BetSpot: String, Codable, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .banker: "バンカー"
-        case .player: "プレイヤー"
-        case .tie: "タイ"
-        case .bankerPair: "Bペア"
-        case .playerPair: "Pペア"
+        case .banker: "BANKER"
+        case .player: "PLAYER"
+        case .tie: "TIE"
+        case .bankerPair: "B PAIR"
+        case .playerPair: "P PAIR"
         }
     }
 
