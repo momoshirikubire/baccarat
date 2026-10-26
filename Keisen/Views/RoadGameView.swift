@@ -3,9 +3,10 @@ import SwiftUI
 /// バカラ・ドラゴンタイガーの罫線画面
 struct RoadGameView: View {
     let store: ShoeStore
-    /// チップのテーブルの親のとき、ベット欄を出して勝敗で精算する
-    var chips: ChipStore? = nil
-    @State private var showChips = false
+    /// 使い方を変えるボタン（罫線だけのモードで左上に出す）
+    var modeButton: ModeButton? = nil
+    /// 結果を記録したあとに呼ぶ（大きな表示と読み上げ）
+    var onRecorded: ((Hand, Int) -> Void)? = nil
     @State private var bankerPair = false
     @State private var playerPair = false
     @State private var confirmNewShoe = false
@@ -14,10 +15,10 @@ struct RoadGameView: View {
     /// 珠盤路・下三路・問路も出すか（はじめは大路だけ）
     @AppStorage("showAllRoads") private var showAllRoads = false
     @AppStorage("tieStyle") private var tieStyle: TieStyle = .dot
+    /// 罫線だけのモードで、結果を大きく出して読み上げるか（はじめはオフ）
+    @AppStorage("announceInRoadsOnly") private var announceResults = false
 
     private var game: RoadGame { store.game }
-    /// 子の端末に配る罫線（例のシューは配らない）
-    private var sharedHands: [Hand] { store.isSample ? [] : store.current.hands }
     private var title: String { "\(game.title)・\(store.current.hands.count) 手" }
 
     /// iPhone を横にしたとき（高さが詰まる）は、罫線を大きくして入力盤を右に置く
@@ -51,8 +52,8 @@ struct RoadGameView: View {
                         Label("過去のシュー", systemImage: "clock.arrow.circlepath")
                     }
                 }
-                if chips != nil {
-                    ToolbarItem(placement: .topBarLeading) { ChipScreenButton(isPresented: $showChips) }
+                if let modeButton {
+                    ToolbarItem(placement: .topBarLeading) { modeButton }
                 }
                 if isLandscape {
                     ToolbarItem(placement: .topBarLeading) {
@@ -65,6 +66,9 @@ struct RoadGameView: View {
                             ForEach(TieStyle.allCases) { Text($0.title).tag($0) }
                         }
                         Toggle("珠盤路・下三路・問路も見る", isOn: $showAllRoads)
+                        if onRecorded != nil {
+                            Toggle("結果を大きく出して読み上げる", isOn: $announceResults)
+                        }
                     } label: {
                         Label("表示の設定", systemImage: "slider.horizontal.3")
                     }
@@ -76,15 +80,11 @@ struct RoadGameView: View {
                 }
             }
             .tipButton()
-            .onAppear { chips?.syncHands(sharedHands) }
-            .onChange(of: chips?.table == nil) { chips?.syncHands(sharedHands) }
-            .sheet(isPresented: $showChips) { if let chips { ChipView(store: chips) } }
             .confirmationDialog("新しいシューを始めますか？", isPresented: $confirmNewShoe, titleVisibility: .visible) {
                 Button("新しいシューを始める") {
                     store.startNewShoe()
                     bankerPair = false
                     playerPair = false
-                    chips?.syncHands(sharedHands)
                 }
                 Button("キャンセル", role: .cancel) {}
             } message: {
@@ -127,10 +127,6 @@ struct RoadGameView: View {
     private func deck(side: Bool) -> some View {
         VStack(spacing: 0) {
             if side { Spacer(minLength: 0) }
-            if let chips, chips.role == .host, chips.table != nil {
-                ChipBetBar(chips: chips)
-                    .background(Theme.deck)
-            }
             inputDeck(side: side)
         }
     }
@@ -148,12 +144,9 @@ struct RoadGameView: View {
                 store.record(outcome, bankerPair: bankerPair, playerPair: playerPair)
                 bankerPair = false
                 playerPair = false
-                chips?.handRecorded(store.current)
+                if let hand = store.current.hands.last { onRecorded?(hand, store.current.hands.count) }
             },
-            onUndo: {
-                store.undo()
-                chips?.handUndone(store.current)
-            }
+            onUndo: { store.undo() }
         )
     }
 }

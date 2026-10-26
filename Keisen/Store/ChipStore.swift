@@ -71,11 +71,14 @@ final class ChipStore: NSObject {
 
     // MARK: - 親
 
-    func createTable(name: String, startingChips: Int, hostPlays: Bool, bankerCommission: Bool = true) {
+    func createTable(name: String, startingChips: Int, hostPlays: Bool, bankerCommission: Bool = false) {
         rememberName()
         stopBrowsing()
         var t = ChipTable(name: name, startingChips: max(0, startingChips), bankerCommission: bankerCommission)
-        if hostPlays { t.join(id: myID, name: displayName) }
+        if hostPlays {
+            let trimmed = myName.trimmingCharacters(in: .whitespaces)
+            t.join(id: myID, name: trimmed.isEmpty ? "記録係" : trimmed)
+        }
         table = t
         code = String(format: "%04d", Int.random(in: 0...9999))
         role = .host
@@ -242,7 +245,8 @@ final class ChipStore: NSObject {
 
     var displayName: String {
         let trimmed = myName.trimmingCharacters(in: .whitespaces)
-        return trimmed.isEmpty ? "親" : trimmed
+        if !trimmed.isEmpty { return trimmed }
+        return role == .host ? "親" : "プレイヤー"
     }
 
     // MARK: - 内部
@@ -265,7 +269,8 @@ final class ChipStore: NSObject {
     }
 
     private func makePeerID() -> MCPeerID {
-        if let peerID, peerID.displayName == displayName { return peerID }
+        // 探しているあいだは同じ ID を使う（名前を変えても、見つけた親への招待と食い違わないように）
+        if let peerID, browser != nil || peerID.displayName == displayName { return peerID }
         // displayName は 63 バイトまで
         var name = displayName
         while name.utf8.count > 63 { name.removeLast() }
@@ -348,7 +353,7 @@ final class ChipStore: NSObject {
             notice = reason
         case (.guest, .closed):
             leave()
-            notice = "親がテーブルを閉じました。"
+            notice = "テーブルを作った人がテーブルを閉じました。"
         default:
             break
         }
@@ -372,7 +377,7 @@ final class ChipStore: NSObject {
                     notice = "参加できませんでした。番号を確かめて、もう一度ためしてください。"
                 } else {
                     leave()
-                    notice = "親との接続が切れました。もう一度参加すると、残りのチップから続けられます。"
+                    notice = "テーブルを作った人の iPhone との接続が切れました。もう一度参加すると、残りのチップから続けられます。"
                 }
             case .connecting:
                 break

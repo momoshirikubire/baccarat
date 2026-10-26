@@ -11,13 +11,13 @@ struct ChipTable: Codable, Hashable {
     /// バカラの罫線画面で入れた、次の手へのベット（参加者ごと）
     var bets: [UUID: [BetSpot: Int]] = [:]
     /// バンカーの勝ちから手数料5%を引くか
-    var bankerCommission = true
+    var bankerCommission = false
     /// 親の罫線（いまのシュー）。子の端末はこれを表示する。
     var hands: [Hand] = []
     /// 精算した手。新しいものが最後。「1つ戻す」で取り消せるように少し残す。
     var rounds: [ChipRound] = []
 
-    init(name: String, startingChips: Int, bankerCommission: Bool = true) {
+    init(name: String, startingChips: Int, bankerCommission: Bool = false) {
         self.name = name
         self.startingChips = startingChips
         self.bankerCommission = bankerCommission
@@ -36,7 +36,7 @@ struct ChipTable: Codable, Hashable {
         pot = try c.decodeIfPresent(Int.self, forKey: .pot) ?? 0
         moves = try c.decodeIfPresent([ChipMove].self, forKey: .moves) ?? []
         bets = try c.decodeIfPresent([UUID: [BetSpot: Int]].self, forKey: .bets) ?? [:]
-        bankerCommission = try c.decodeIfPresent(Bool.self, forKey: .bankerCommission) ?? true
+        bankerCommission = try c.decodeIfPresent(Bool.self, forKey: .bankerCommission) ?? false
         hands = try c.decodeIfPresent([Hand].self, forKey: .hands) ?? []
         rounds = try c.decodeIfPresent([ChipRound].self, forKey: .rounds) ?? []
     }

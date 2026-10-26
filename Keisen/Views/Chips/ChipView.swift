@@ -1,124 +1,35 @@
 import SwiftUI
 
-/// 実物のチップの代わりに使うチップのテーブル。1台でも、近くの全員の iPhone をつないでも使える。
-struct ChipView: View {
-    @Bindable var store: ChipStore
+/// チップのテーブルの管理（親：参加番号・近くの人が参加できる・参加者・持ち点に戻す、だれでも：渡す／ポットに出す・履歴）。
+/// 親とプレイヤーの画面のツールバーから開くシート。
+struct ChipManageSheet: View {
+    let store: ChipStore
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
-            Group {
-                if store.role == .none || (store.role == .guest && store.table == nil) {
-                    ChipStartView(store: store)
-                } else {
-                    ChipTableView(store: store)
+            ChipTableView(store: store)
+                .background(Theme.background)
+                .navigationTitle(store.table?.name ?? "テーブル")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) { Button("閉じる") { dismiss() } }
                 }
-            }
-            .background(Theme.background)
-            .navigationTitle(store.table?.name ?? "チップ")
-            .navigationBarTitleDisplayMode(.inline)
-            .tipButton()
-            .alert(store.notice ?? "", isPresented: Binding(
-                get: { store.notice != nil },
-                set: { if !$0 { store.notice = nil } }
-            )) {
-                Button("OK", role: .cancel) {}
-            }
         }
+        .onChange(of: store.table == nil) { if store.table == nil { dismiss() } }
     }
 }
 
-// MARK: - はじめの画面
-
-private struct ChipStartView: View {
+/// 親との知らせ（断られた・切れた）を出す
+struct ChipNoticeAlert: ViewModifier {
     @Bindable var store: ChipStore
-    @State private var tableName = "テーブル"
-    @State private var startingChips = 1000
-    @State private var hostPlays = true
-    @State private var bankerCommission = true
-    @State private var joining: ChipStore.FoundTable?
-    @State private var code = ""
 
-    var body: some View {
-        List {
-            Section {
-                TextField("あなたの名前", text: $store.myName)
-                    .textContentType(.nickname)
-            } header: {
-                Text("あなた")
-            } footer: {
-                Text("みんなの画面に出る名前です。")
-            }
-
-            Section {
-                TextField("テーブルの名前", text: $tableName)
-                HStack {
-                    Text("はじめの持ち点")
-                    Spacer()
-                    TextField("1000", value: $startingChips, format: .number)
-                        .keyboardType(.numberPad)
-                        .multilineTextAlignment(.trailing)
-                        .frame(maxWidth: 120)
-                    Text("pt").foregroundStyle(.secondary)
-                }
-                Toggle("自分も参加する", isOn: $hostPlays)
-                Toggle("バンカーの勝ちから手数料5%を引く", isOn: $bankerCommission)
-                Button("テーブルを作る") {
-                    let name = tableName.trimmingCharacters(in: .whitespaces)
-                    store.createTable(name: name.isEmpty ? "テーブル" : name, startingChips: startingChips, hostPlays: hostPlays, bankerCommission: bankerCommission)
-                }
-            } header: {
-                Text("親になる")
-            } footer: {
-                Text("親の iPhone がテーブルを持ちます。1台だけで全員のぶんを記録することも、近くのみんなの iPhone をつなぐこともできます。バカラの画面でベットを入れると、親が勝敗を入れたときに精算されます。")
-            }
-
-            Section {
-                if store.role == .guest {
-                    HStack {
-                        ProgressView()
-                        Text("参加しています…").padding(.leading, 6)
-                    }
-                } else if store.found.isEmpty {
-                    HStack {
-                        ProgressView()
-                        Text("近くのテーブルを探しています…")
-                            .foregroundStyle(.secondary)
-                            .padding(.leading, 6)
-                    }
-                }
-                ForEach(store.found) { table in
-                    Button {
-                        code = ""
-                        joining = table
-                    } label: {
-                        LabeledContent(table.name, value: table.peer.displayName)
-                    }
-                    .disabled(store.role == .guest)
-                }
-            } header: {
-                Text("近くのテーブルに参加する")
-            } footer: {
-                Text("親の画面に出ている4桁の参加番号を入れて参加します。Wi-Fi と Bluetooth をオンにしてください。インターネットはなくても使えます。")
-            }
-
-            Section {
-                Text("チップはポイント（pt）で数える遊び用の記録です。お金に換えたり、精算に使ったりはしないでください。")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .scrollDismissesKeyboard(.interactively)
-        .onAppear { store.startBrowsing() }
-        .onDisappear { if store.role == .none { store.stopBrowsing() } }
-        .alert("参加番号", isPresented: Binding(get: { joining != nil }, set: { if !$0 { joining = nil } })) {
-            TextField("4桁の番号", text: $code)
-                .keyboardType(.numberPad)
-            Button("参加する") {
-                if let joining { store.join(joining, code: code) }
-            }
-            Button("キャンセル", role: .cancel) {}
-        } message: {
-            Text("「\(joining?.name ?? "")」の親の画面に出ている番号を入れてください。")
+    func body(content: Content) -> some View {
+        content.alert(store.notice ?? "", isPresented: Binding(
+            get: { store.notice != nil },
+            set: { if !$0 { store.notice = nil } }
+        )) {
+            Button("OK", role: .cancel) {}
         }
     }
 }
@@ -251,7 +162,7 @@ private struct ChipTableView: View {
             Text("親")
         } footer: {
             if store.isOpen {
-                Text("参加する人は「チップ」タブの「近くのテーブルに参加する」から、この番号を入れます。親のアプリを開いたままにしてください。")
+                Text("参加する人は「みんなでチップ：プレイヤー」で近くのテーブルを選び、この番号を入れます。親のアプリを開いたままにしてください。")
             }
         }
     }

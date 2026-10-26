@@ -11,8 +11,7 @@ struct KeisenApp: App {
     // BlackjackView, PokerView, ScoreSheetView）。
     var body: some Scene {
         WindowGroup {
-            // チップのテーブルは、バカラ画面の左上のボタンから開く
-            BaccaratView(shoe: baccarat, chips: chips)
+            RootView(shoe: baccarat, chips: chips)
                 .tint(Theme.ink)
                 .environment(tips)
         }
