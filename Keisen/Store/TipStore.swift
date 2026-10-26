@@ -52,7 +52,9 @@ final class TipStore {
         loadFailed = false
         defer { isLoading = false }
         do {
-            products = try await Product.products(for: Self.productIDs).sorted { $0.price < $1.price }
+            // 値段ではなく productIDs の順に並べる（StoreKit のテスト設定では値段の比べ方がずれることがあるため）
+            let order = Dictionary(uniqueKeysWithValues: Self.productIDs.enumerated().map { ($1, $0) })
+            products = try await Product.products(for: Self.productIDs).sorted { (order[$0.id] ?? .max) < (order[$1.id] ?? .max) }
             loadFailed = products.isEmpty
         } catch {
             loadFailed = true
