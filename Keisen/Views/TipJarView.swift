@@ -108,15 +108,30 @@ struct DeveloperNote: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
             // SNS のプロフィールだけにつなぐ（投げ銭などアプリの外での支払いには案内しない）
-            Link(destination: URL(string: "https://www.instagram.com/momoshiri_kubire/")!) {
-                Label("Instagram を見る　@momoshiri_kubire", systemImage: "camera.fill")
-                    .font(.footnote.bold())
-                    .frame(maxWidth: .infinity)
+            HStack(spacing: 8) {
+                snsButton("Instagram", systemImage: "camera.fill",
+                          url: "https://www.instagram.com/momoshiri_kubire/",
+                          color: Color(red: 0.88, green: 0.19, blue: 0.47))
+                snsButton("TikTok", systemImage: "music.note",
+                          url: "https://www.tiktok.com/@momoshiri_kubire",
+                          color: .black)
             }
-            .buttonStyle(.borderedProminent)
-            .buttonBorderShape(.capsule)
-            .tint(Color(red: 0.88, green: 0.19, blue: 0.47))
+            Text("どちらも @momoshiri_kubire")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity)
         }
+    }
+
+    private func snsButton(_ title: String, systemImage: String, url: String, color: Color) -> some View {
+        Link(destination: URL(string: url)!) {
+            Label(title, systemImage: systemImage)
+                .font(.footnote.bold())
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.borderedProminent)
+        .buttonBorderShape(.capsule)
+        .tint(color)
     }
 }
 
