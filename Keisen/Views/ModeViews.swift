@@ -59,32 +59,38 @@ struct ModePickerView: View {
     let onPick: (AppMode) -> Void
 
     var body: some View {
-        // 小さい画面の横向きでも文字を切らずに全部見せるため、はみ出す分はスクロールする
-        ScrollView {
-            VStack(spacing: 14) {
-                Text("どう使いますか？")
-                    .font(.title3.bold())
-                    .foregroundStyle(Theme.ink)
-                HStack(alignment: .top, spacing: 12) {
-                    card(.roadsOnly, icon: "square.grid.3x3",
-                         title: "罫線だけ",
-                         role: nil,
-                         detail: "勝敗を入れて罫線を記録します。")
-                    card(.dealer, icon: "person.crop.rectangle.stack",
-                         title: "テーブルを作る",
-                         role: "勝敗を記録する親になる",
-                         detail: "勝敗を入れると、みんなのベットを pt で精算します。自分もベットできます。")
-                    card(.player, icon: "person.2",
-                         title: "テーブルに参加する",
-                         role: "プレイヤーとしてベットする",
-                         detail: "近くのテーブルに入って、自分の iPhone でベットします。")
-                }
-                Text("あとから画面の左上の「使い方」で変えられます。チップは pt で数える遊び用の記録で、お金には換えられません。")
-                    .font(.footnote)
-                    .foregroundStyle(Theme.muted)
+        // 小さい画面の横向きでも文字を切らずに全部見せるため、はみ出す分はスクロールする。
+        // 収まるときは画面の上下のまんなかに置く
+        GeometryReader { geo in
+            ScrollView {
+                VStack(spacing: 14) {
+                    Text("どう使いますか？")
+                        .font(.title3.bold())
+                        .foregroundStyle(Theme.ink)
+                    HStack(alignment: .top, spacing: 12) {
+                        card(.roadsOnly, icon: "square.grid.3x3",
+                             title: "罫線だけ",
+                             role: nil,
+                             detail: "勝敗を入れて罫線を記録します。")
+                        card(.dealer, icon: "person.crop.rectangle.stack",
+                             title: "テーブルを作る",
+                             role: "勝敗を記録する親になる",
+                             detail: "勝敗を入れると、みんなのベットを pt で精算します。自分もベットできます。")
+                        card(.player, icon: "person.2",
+                             title: "テーブルに参加する",
+                             role: "プレイヤーとしてベットする",
+                             detail: "近くのテーブルに入って、自分の iPhone でベットします。")
+                    }
+                    // カードの高さは中身に合わせてそろえ、余った高さまで伸ばさない
                     .fixedSize(horizontal: false, vertical: true)
+                    Text("あとから画面の左上の「使い方」で変えられます。チップは pt で数える遊び用の記録で、お金には換えられません。")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.muted)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(20)
+                .frame(maxWidth: .infinity, minHeight: geo.size.height)
             }
-            .padding(20)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Theme.background)
