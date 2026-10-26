@@ -22,7 +22,7 @@ struct RoadGameView: View {
                         board(scale: 1.35)
                         deck(side: true)
                             .frame(width: 300)
-                            .frame(maxHeight: .infinity, alignment: .bottom)
+                            .frame(maxHeight: .infinity)
                             .background(Theme.deck.ignoresSafeArea())
                     }
                 } else {
@@ -30,7 +30,8 @@ struct RoadGameView: View {
                         .safeAreaInset(edge: .bottom, spacing: 0) { deck(side: false) }
                 }
             }
-            .navigationTitle("\(game.title)・\(store.current.hands.count) 手")
+            // 横向きではタイトルが罫線の真ん中からずれて見えるので出さない
+            .navigationTitle(isLandscape ? "" : "\(game.title)・\(store.current.hands.count) 手")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -71,6 +72,12 @@ struct RoadGameView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(10)
                         .background(Theme.sheet, in: RoundedRectangle(cornerRadius: 8))
+                }
+                if isLandscape {
+                    Text("\(game.title)・\(store.current.hands.count) 手")
+                        .font(.subheadline.bold())
+                        .foregroundStyle(Theme.ink)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 StatsBar(game: game, shoe: store.current)
                 RoadsBoard(game: game, hands: store.current.hands, scale: scale)
@@ -166,13 +173,13 @@ struct InputDeck: View {
     private func resultButton(_ outcome: Outcome) -> some View {
         Button { onResult(outcome) } label: {
             VStack(spacing: 2) {
-                Text(game.name(outcome)).font(.headline)
+                Text(game.name(outcome)).font(.headline).lineLimit(1).minimumScaleFactor(0.7)
                 // ドラゴンタイガーのタイは文字も珠盤路も「和」なので1つだけ出す
                 let letter = game.letter(outcome), bead = game.bead(outcome)
                 Text(letter == bead ? bead : "\(letter) \(bead)").font(.caption2).opacity(0.85)
             }
             .foregroundStyle(.white)
-            .frame(maxWidth: .infinity, minHeight: 58)
+            .frame(maxWidth: .infinity, minHeight: side ? 84 : 58)
             .background(Theme.color(outcome), in: RoundedRectangle(cornerRadius: 12))
         }
         .buttonStyle(PressStyle())
