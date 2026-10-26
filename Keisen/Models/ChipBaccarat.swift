@@ -80,6 +80,15 @@ enum BetSpot: String, Codable, CaseIterable, Identifiable {
         }
     }
 
+    /// 結果の呼び名（ベット欄・精算の表示は英字でそろえる）
+    static func title(_ outcome: Outcome) -> String {
+        switch outcome {
+        case .banker: BetSpot.banker.title
+        case .player: BetSpot.player.title
+        case .tie: BetSpot.tie.title
+        }
+    }
+
     var short: String {
         switch self {
         case .banker: "B"

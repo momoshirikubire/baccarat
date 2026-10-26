@@ -113,7 +113,7 @@ struct ChipBetBar: View {
     }
 }
 
-/// 「第12手 バンカー　あなた +95 pt」と全員の増減
+/// 「第12手 BANKER　あなた +95 pt」と全員の増減
 private struct SettlementLine: View {
     let round: ChipRound
     let myID: UUID
@@ -122,14 +122,14 @@ private struct SettlementLine: View {
         VStack(alignment: .leading, spacing: 2) {
             HStack(spacing: 8) {
                 Text("第\(round.handNumber)手").font(.caption.bold())
-                Text(round.hand.outcome == .banker ? "BANKER" : round.hand.outcome == .player ? "PLAYER" : "TIE")
+                Text(BetSpot.title(round.hand.outcome))
                     .font(.caption.bold())
                     .foregroundStyle(.white)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 1)
                     .background(Theme.color(round.hand.outcome), in: Capsule())
-                if round.hand.bankerPair { pairTag("Bペア", Theme.banker) }
-                if round.hand.playerPair { pairTag("Pペア", Theme.player) }
+                if round.hand.bankerPair { pairTag(BetSpot.bankerPair.title, Theme.banker) }
+                if round.hand.playerPair { pairTag(BetSpot.playerPair.title, Theme.player) }
                 if let mine = round.results.first(where: { $0.member == myID }) {
                     Text("あなた \(signed(mine.net)) pt")
                         .font(.caption.bold().monospacedDigit())
