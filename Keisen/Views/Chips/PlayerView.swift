@@ -98,6 +98,7 @@ private struct PlayerTableView: View {
     /// 最後に大きく出した精算の時刻。親が「1つ戻す」で前の精算に戻ったときは出さない。
     @State private var shownUntil = Date.distantPast
     @State private var showManage = false
+    @State private var showRules = false
     @AppStorage("showAllRoads") private var showAllRoads = false
     @AppStorage("tieStyle") private var tieStyle: TieStyle = .dot
     @AppStorage("speakResults") private var speakResults = true
@@ -142,6 +143,11 @@ private struct PlayerTableView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) { ModeButton(chips: chips) }
                 ToolbarItem(placement: .topBarLeading) {
+                    Button { showRules = true } label: {
+                        ToolbarTitle("ルール", systemImage: "book")
+                    }
+                }
+                ToolbarItem(placement: .topBarLeading) {
                     Text("\(table?.name ?? "テーブル")・\(table?.hands.count ?? 0) 手").font(.headline).fixedSize()
                 }
                 ToolbarItem(placement: .topBarTrailing) {
@@ -166,6 +172,7 @@ private struct PlayerTableView: View {
         }
         .resultSplash($announcement)
         .sheet(isPresented: $showManage) { ChipManageSheet(store: chips) }
+        .sheet(isPresented: $showRules) { RulesView() }
         .onAppear {
             draft = table?.bets[chips.myID] ?? [:]
             shownUntil = table?.lastRound?.date ?? .distantPast

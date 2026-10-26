@@ -111,6 +111,7 @@ private struct DealerTableView: View {
     @AppStorage("tieStyle") private var tieStyle: TieStyle = .dot
     @AppStorage("speakResults") private var speakResults = true
     @State private var announcement: ResultAnnouncement?
+    @State private var showRules = false
     @State private var rebuyTarget: ChipMember?
     @State private var rebuyAmount: Int?
 
@@ -189,6 +190,11 @@ private struct DealerTableView: View {
                     }
                 }
                 ToolbarItem(placement: .topBarLeading) {
+                    Button { showRules = true } label: {
+                        ToolbarTitle("ルール", systemImage: "book")
+                    }
+                }
+                ToolbarItem(placement: .topBarLeading) {
                     Text("\(isPlaying ? "記録係" : "親")・\(sharedHands.count) 手").font(.headline).fixedSize()
                 }
                 ToolbarItem(placement: .topBarTrailing) {
@@ -232,6 +238,7 @@ private struct DealerTableView: View {
         }
         .sheet(isPresented: $showManage) { ChipManageSheet(store: chips) }
         .sheet(isPresented: $showHistory) { HistoryView(store: shoe) }
+        .sheet(isPresented: $showRules) { RulesView() }
         .alert("追加（リバイ）", isPresented: Binding(get: { rebuyTarget != nil }, set: { if !$0 { rebuyTarget = nil } })) {
             TextField("pt", value: $rebuyAmount, format: .number).keyboardType(.numberPad)
             Button("追加する") {
