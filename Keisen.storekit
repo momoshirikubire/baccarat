@@ -1,11 +1,9 @@
 {
   "identifier" : "4B6E7A21-0C1D-4F35-9B5A-7E2C3D4A5B01",
-  "nonRenewingSubscriptions" : [
-
-  ],
+  "nonRenewingSubscriptions" : [],
   "products" : [
     {
-      "displayPrice" : "300",
+      "displayPrice" : "500",
       "familyShareable" : false,
       "internalID" : "4B6E7A21-0C1D-4F35-9B5A-7E2C3D4A5B11",
       "localizations" : [
@@ -48,21 +46,6 @@
       "productID" : "com.tadahonami.keisen.tip.large",
       "referenceName" : "Tip Large",
       "type" : "Consumable"
-    },
-    {
-      "displayPrice" : "5000",
-      "familyShareable" : false,
-      "internalID" : "4B6E7A21-0C1D-4F35-9B5A-7E2C3D4A5B14",
-      "localizations" : [
-        {
-          "description" : "開発をとことん応援",
-          "displayName" : "特大応援",
-          "locale" : "ja"
-        }
-      ],
-      "productID" : "com.tadahonami.keisen.tip.huge",
-      "referenceName" : "Tip Huge",
-      "type" : "Consumable"
     }
   ],
   "settings" : {
@@ -71,9 +54,7 @@
     "_locale" : "ja",
     "_storefront" : "JPN"
   },
-  "subscriptionGroups" : [
-
-  ],
+  "subscriptionGroups" : [],
   "version" : {
     "major" : 3,
     "minor" : 0

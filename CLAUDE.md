@@ -1,4 +1,4 @@
-# 罫線ノート — 広告なしのバカラ罫線アプリ
+# バカラノート — 広告なしのバカラ罫線・チップ記録アプリ
 
 - ユーザーへの返答は**必ず日本語**で。
 - ユーザーが自分で使うために作った、広告のないバカラ罫線の記録アプリ。App Store で公開する。
@@ -8,13 +8,20 @@
 ## 技術
 - SwiftUI、iOS 17 以降、Swift 5 モード。外部ライブラリなし。
 - プロジェクトは `Keisen.xcodeproj`（スキーム `Keisen`）、ソースは `Keisen/`。Xcode の「フォルダ同期グループ」なので、ファイルを置くだけでビルド対象になる。
-- 表示名は「罫線ノート」、バンドルIDは `com.tadahonami.keisen`。署名チームは pbxproj に入れていないので、Xcode の Signing & Capabilities でチームを選ぶ（または xcodebuild に `DEVELOPMENT_TEAM=...` を渡す）。
+- App Store の名前は「バカラノート - 罫線とチップの記録」（2026-10-26 に「罫線ノート」から変更）、ホーム画面の表示名は「バカラノート」、バンドルIDは `com.tadahonami.keisen`。署名チームは pbxproj に入れていないので、Xcode の Signing & Capabilities でチームを選ぶ（または xcodebuild に `DEVELOPMENT_TEAM=...` を渡す）。
 - `Keisen/Info.plist` には `ITSAppUsesNonExemptEncryption = NO` だけ。アプリアイコンはアルファなしの 1024px PNG。
 - `Keisen/PrivacyInfo.xcprivacy`：データ収集なし、UserDefaults（チップ回数の保存）の理由 CA92.1。
 - `Keisen.storekit`：チップのテスト用設定。スキームの Run → Options → StoreKit Configuration で選ぶとシミュレータで買える。
 
 ## フォルダ構成
-- 画面は5つのタブ：バカラ / ドラゴンタイガー / ブラックジャック / ポーカー / 点数表（`App/KeisenApp.swift`）。どの画面も右上のハートから応援画面を開ける（`.tipButton()`）。
+- 1.0 はバカラだけ（`App/KeisenApp.swift` はタブなしで `RoadGameView` を出す）。ドラゴンタイガー・ブラックジャック・ポーカー・点数表のコードは残してあり、あとのアップデートで TabView に戻して出す。右上の「応援」から応援画面を開ける（`.tipButton()`）。
+- 画面は横向きだけ（pbxproj の UISupportedInterfaceOrientations_iPhone）。横向き（verticalSizeClass が compact）では、大路のマスを画面の高さに収まる大きさにして入力盤を右端に置く。縦向きのレイアウトのコードも残してある。
+- バカラ画面は大路だけが基本（大きめのマス）。「珠盤路・下三路・問路も見る」で残りの罫線と入力盤の問路を出す（`@AppStorage("roads.showAll")`。2026-10-26 にキー名を変えて、試していた端末も大路だけに戻した）。横向きで大路だけのときは、集計（`MiniStats`）を右の細い列（幅200）に移し、BANKER・PLAYER・TIE のボタンを縦に並べて、大路のマスを大きくする。過去のシューは全部出す。
+- 大路のタイの印は右上の「表示」で「まる」（はじめ）か「斜線」を選ぶ（`@AppStorage("tieStyle")`、`TieStyle`）。2回以上は回数を添える。
+- 応援のお願い：「新しいシュー」を2回始めるごとにアラートを出す（「あとで」で閉じる。最後のチップから1年以内の人には出さない。`RoadGameView.maybeNudge`・`TipStore.tippedWithinYear`）。
+- 右上のボタンはアイコンだけにせず文字つき（履歴・表示・新しいシュー・応援）。
+- 左上の「ルール」（`Views/RulesView.swift`）：「3枚目の判定」（カードを選ぶと PLAYER / BANKER が3枚目を引くかと勝ち負けを出す。計算は `Models/ThirdCard.swift`）と、ルールのまとめ。
+- 結果の呼び名は英字（BANKER / PLAYER / TIE、ペアは B PAIR / P PAIR）。
 - `Keisen/Models/Hand.swift`：結果（B / P / T）、ペア、シュー、初回に見せる例のシュー。`RoadGame` でバカラとドラゴンタイガーの呼び名を切り替える（ドラゴン＝バンカーの位置、タイガー＝プレイヤーの位置。罫線の計算は同じ）。
 - `Keisen/Models/Roads.swift`：罫線の計算。大路（タイは直前のマスに数で付ける、6段を超えたり下が埋まっていたら右へ曲がるドラゴンテール）、下三路（大眼仔・小路・曱甴路 = 1・2・3列前と比べる）、問路（次が B / P のときに付く印）。
 - `Keisen/Store/ShoeStore.swift`：いまのシューと過去のシュー。ゲームごとに `Application Support/shoes.json`（バカラ）・`dragon-tiger.json` に保存。読み書きは `FileStore`。
@@ -22,7 +29,7 @@
 - ポーカー（`Models/Poker.swift`・`PokerStore`・`Views/Poker/`）：ホームゲームの参加者ごとのバイインと最後のチップ、受け渡しの少ない精算。ブラインドタイマー（終わる時刻を保存するのでアプリを閉じてもずれない。動いているあいだは画面を消さない）。
 - 点数表（`ScoreStore`・`Views/Scores/`）：参加者×ラウンドの点数。
 - 点数やチップはすべて「pt（ポイント）」で数え、「円」は使わない（日本では仲間内でもお金を賭けると賭博罪になるため）。
-- `Keisen/Store/TipStore.swift`：StoreKit 2 のチップ。商品ID は `com.tadahonami.keisen.tip.small / medium / large / huge`（消耗型。¥300 / ¥1,000 / ¥2,000 / ¥5,000）。
+- `Keisen/Store/TipStore.swift`：StoreKit 2 のチップ。商品ID は `com.tadahonami.keisen.tip.small / medium / large`（消耗型。¥500 / ¥1,000 / ¥2,000）。`tip.huge`（¥5,000）は 2026-10 にやめた。
 - `Keisen/Views/`：罫線画面と入力盤（`RoadGameView`）、罫線の描画（`RoadViews`、Canvas）、過去のシュー、応援画面。
 - `docs/`：ブラウザ版（ホーム画面に追加できる PWA）。GitHub Pages で `docs/` を公開する。
 - `APPSTORE.md`：App Store 提出の手順。
