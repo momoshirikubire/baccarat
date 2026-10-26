@@ -5,7 +5,7 @@
   ],
   "products" : [
     {
-      "displayPrice" : "160",
+      "displayPrice" : "300",
       "familyShareable" : false,
       "internalID" : "4B6E7A21-0C1D-4F35-9B5A-7E2C3D4A5B11",
       "localizations" : [
@@ -20,12 +20,12 @@
       "type" : "Consumable"
     },
     {
-      "displayPrice" : "480",
+      "displayPrice" : "500",
       "familyShareable" : false,
       "internalID" : "4B6E7A21-0C1D-4F35-9B5A-7E2C3D4A5B12",
       "localizations" : [
         {
-          "description" : "ランチ1回ぶんの応援",
+          "description" : "ケーキ1個ぶんの応援",
           "displayName" : "しっかり応援",
           "locale" : "ja"
         }
@@ -35,12 +35,12 @@
       "type" : "Consumable"
     },
     {
-      "displayPrice" : "980",
+      "displayPrice" : "1000",
       "familyShareable" : false,
       "internalID" : "4B6E7A21-0C1D-4F35-9B5A-7E2C3D4A5B13",
       "localizations" : [
         {
-          "description" : "開発をがっつり応援",
+          "description" : "ランチ1回ぶんの応援",
           "displayName" : "めっちゃ応援",
           "locale" : "ja"
         }
