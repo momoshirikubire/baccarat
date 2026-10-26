@@ -127,7 +127,9 @@ struct BigRoadView: View {
         case .slash:
             Pen.slash(&ctx, center, radius: cell / 2 - 5, color: Theme.tie, width: max(2.2, cell / 12))
             if count > 1 {
-                ctx.draw(Text("\(count)").font(.system(size: cell * 0.45, weight: .bold)).foregroundStyle(Theme.ink), at: center)
+                // 斜線と重なって読みにくいので、白い丸を敷いてから真ん中に出す
+                Pen.dot(&ctx, center, radius: cell * 0.2, color: Theme.sheet)
+                ctx.draw(Text("\(count)").font(.system(size: cell * 0.34, weight: .bold)).foregroundStyle(Theme.tie), at: center)
             }
         }
     }

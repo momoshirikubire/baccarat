@@ -10,7 +10,6 @@ final class TipStore {
         "com.tadahonami.keisen.tip.small",
         "com.tadahonami.keisen.tip.medium",
         "com.tadahonami.keisen.tip.large",
-        "com.tadahonami.keisen.tip.huge",
     ]
 
     enum Phase: Equatable {

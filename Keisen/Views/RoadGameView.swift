@@ -62,9 +62,11 @@ struct RoadGameView: View {
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
+                        // サブメニューにして、何を選ぶのかを行の名前で見せる
                         Picker("大路のタイの印", selection: $tieStyle) {
                             ForEach(TieStyle.allCases) { Text($0.title).tag($0) }
                         }
+                        .pickerStyle(.menu)
                         Toggle("珠盤路・下三路・問路も見る", isOn: $showAllRoads)
                         if onRecorded != nil {
                             Toggle("結果を大きく出して読み上げる", isOn: $announceResults)

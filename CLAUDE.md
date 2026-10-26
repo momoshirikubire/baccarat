@@ -33,7 +33,7 @@
   - 精算があるので v1.1 から年齢区分は 17+（了承済み、`APPSTORE.md`）。
 - 点数表（`ScoreStore`・`Views/Scores/`）：参加者×ラウンドの点数。
 - 点数やチップはすべて「pt（ポイント）」で数え、「円」は使わない（日本では仲間内でもお金を賭けると賭博罪になるため）。
-- `Keisen/Store/TipStore.swift`：StoreKit 2 のチップ。商品ID は `com.tadahonami.keisen.tip.small / medium / large / huge`（消耗型。¥300 / ¥1,000 / ¥2,000 / ¥5,000）。
+- `Keisen/Store/TipStore.swift`：StoreKit 2 のチップ。商品ID は `com.tadahonami.keisen.tip.small / medium / large`（消耗型。¥500 / ¥1,000 / ¥2,000）。`tip.huge`（¥5,000）は 2026-10 にやめた。
 - `Keisen/Views/`：罫線画面と入力盤（`RoadGameView`）、罫線の描画（`RoadViews`、Canvas）、過去のシュー、応援画面。
 - `docs/`：ブラウザ版（ホーム画面に追加できる PWA）。GitHub Pages で `docs/` を公開する。
 - `APPSTORE.md`：App Store 提出の手順。
