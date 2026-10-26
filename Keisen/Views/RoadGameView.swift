@@ -8,8 +8,11 @@ struct RoadGameView: View {
     @State private var confirmNewShoe = false
     @State private var showHistory = false
     @Environment(\.verticalSizeClass) private var verticalSizeClass
+    /// 珠盤路・下三路・問路も出すか（はじめは大路だけ）
+    @AppStorage("showAllRoads") private var showAllRoads = false
 
     private var game: RoadGame { store.game }
+    private var title: String { "\(game.title)・\(store.current.hands.count) 手" }
 
     /// iPhone を横にしたとき（高さが詰まる）は、罫線を大きくして入力盤を右に置く
     private var isLandscape: Bool { verticalSizeClass == .compact }
@@ -30,13 +33,18 @@ struct RoadGameView: View {
                         .safeAreaInset(edge: .bottom, spacing: 0) { deck(side: false) }
                 }
             }
-            // 横向きではタイトルが罫線の真ん中からずれて見えるので出さない
-            .navigationTitle(isLandscape ? "" : "\(game.title)・\(store.current.hands.count) 手")
+            // 横向きでは真ん中のタイトルが罫線からずれて見えるので、履歴ボタンの横に出す
+            .navigationTitle(isLandscape ? "" : title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button { showHistory = true } label: {
                         Label("過去のシュー", systemImage: "clock.arrow.circlepath")
+                    }
+                }
+                if isLandscape {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Text(title).font(.headline).fixedSize()
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
@@ -73,14 +81,17 @@ struct RoadGameView: View {
                         .padding(10)
                         .background(Theme.sheet, in: RoundedRectangle(cornerRadius: 8))
                 }
-                if isLandscape {
-                    Text("\(game.title)・\(store.current.hands.count) 手")
-                        .font(.subheadline.bold())
-                        .foregroundStyle(Theme.ink)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
                 StatsBar(game: game, shoe: store.current)
-                RoadsBoard(game: game, hands: store.current.hands, scale: scale)
+                RoadsBoard(game: game, hands: store.current.hands, scale: scale, showAll: showAllRoads)
+                Button {
+                    withAnimation(.easeOut(duration: 0.2)) { showAllRoads.toggle() }
+                } label: {
+                    Label(showAllRoads ? "大路だけにする" : "珠盤路・下三路・問路も見る",
+                          systemImage: showAllRoads ? "chevron.up" : "chevron.down")
+                        .font(.footnote.bold())
+                        .frame(maxWidth: .infinity, minHeight: 36)
+                }
+                .foregroundStyle(Theme.muted)
             }
             .padding(12)
         }
@@ -95,6 +106,7 @@ struct RoadGameView: View {
             playerPair: $playerPair,
             canUndo: store.canUndo,
             side: side,
+            showAsk: showAllRoads,
             onResult: { outcome in
                 store.record(outcome, bankerPair: bankerPair, playerPair: playerPair)
                 bankerPair = false
@@ -113,14 +125,18 @@ struct InputDeck: View {
     @Binding var playerPair: Bool
     let canUndo: Bool
     var side = false
+    /// 問路（次が B / P のときに下三路に付く印）を出すか
+    var showAsk = true
     let onResult: (Outcome) -> Void
     let onUndo: () -> Void
 
     var body: some View {
         VStack(spacing: 8) {
-            HStack(spacing: 8) {
-                ask(.banker)
-                ask(.player)
+            if showAsk {
+                HStack(spacing: 8) {
+                    ask(.banker)
+                    ask(.player)
+                }
             }
             HStack(spacing: 8) {
                 resultButton(.banker)
@@ -129,8 +145,8 @@ struct InputDeck: View {
             }
             HStack(spacing: 8) {
                 if game.hasPairs {
-                    toggle("Bペア", isOn: $bankerPair, color: Theme.banker)
-                    toggle("Pペア", isOn: $playerPair, color: Theme.player)
+                    toggle("B PAIR", isOn: $bankerPair, color: Theme.banker)
+                    toggle("P PAIR", isOn: $playerPair, color: Theme.player)
                 }
                 Button(action: onUndo) {
                     Label("1つ戻す", systemImage: "arrow.uturn.backward")

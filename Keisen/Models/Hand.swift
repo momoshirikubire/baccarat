@@ -67,11 +67,11 @@ enum RoadGame: String, CaseIterable, Identifiable {
 
     func name(_ outcome: Outcome) -> String {
         switch (self, outcome) {
-        case (_, .tie): "タイ"
-        case (.baccarat, .banker): "バンカー"
-        case (.baccarat, .player): "プレイヤー"
-        case (.dragonTiger, .banker): "ドラゴン"
-        case (.dragonTiger, .player): "タイガー"
+        case (_, .tie): "TIE"
+        case (.baccarat, .banker): "BANKER"
+        case (.baccarat, .player): "PLAYER"
+        case (.dragonTiger, .banker): "DRAGON"
+        case (.dragonTiger, .player): "TIGER"
         }
     }
 

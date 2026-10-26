@@ -197,14 +197,18 @@ struct RoadsBoard: View {
     let hands: [Hand]
     /// 横向きのときはマスを大きくする
     var scale: CGFloat = 1
+    /// false なら大路だけ（大きめに出す）。珠盤路・下三路は見たい人だけが出す。
+    var showAll = true
 
     var body: some View {
         let big = Roads.bigRoad(hands)
         VStack(spacing: 10) {
-            RoadCard(title: "大路", detail: streak(big)) { BigRoadView(road: big, cell: 22 * scale) }
-            RoadCard(title: "珠盤路") { BeadPlateView(game: game, hands: hands, cell: 26 * scale) }
-            ForEach(DerivedRoad.allCases) { road in
-                RoadCard(title: road.title) { DerivedRoadView(columns: big.columns, road: road, cell: 13 * scale) }
+            RoadCard(title: "大路", detail: streak(big)) { BigRoadView(road: big, cell: (showAll ? 22 : 30) * scale) }
+            if showAll {
+                RoadCard(title: "珠盤路") { BeadPlateView(game: game, hands: hands, cell: 26 * scale) }
+                ForEach(DerivedRoad.allCases) { road in
+                    RoadCard(title: road.title) { DerivedRoadView(columns: big.columns, road: road, cell: 13 * scale) }
+                }
             }
         }
     }
@@ -228,8 +232,8 @@ struct StatsBar: View {
             tile("\(c.player)", game.name(.player), percent(c.player, n), Theme.player)
             tile("\(c.tie)", game.name(.tie), percent(c.tie, n), Theme.tie)
             if game.hasPairs {
-                tile("\(c.bankerPair)", "Bペア", nil, Theme.banker)
-                tile("\(c.playerPair)", "Pペア", nil, Theme.player)
+                tile("\(c.bankerPair)", "B PAIR", nil, Theme.banker)
+                tile("\(c.playerPair)", "P PAIR", nil, Theme.player)
             }
         }
     }
