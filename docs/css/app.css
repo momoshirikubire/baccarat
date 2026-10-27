@@ -250,3 +250,207 @@ i.dot.b { background: var(--banker); } i.dot.p { background: var(--player); } i.
 .shoe-list .del { color: var(--banker); padding: 0 14px; font-weight: 700; font-size: 12px; border-left: 1px solid var(--line); }
 .empty { text-align: center; padding: 30px 10px; }
 .empty p { color: var(--muted); font-size: 13px; }
+
+/* ===== テーブル（親・プレイヤー） ===== */
+.up { color: #1fa86a; } .down { color: var(--banker); }
+.band .up, .deck-wrap .up, .mybet .up { color: #6fd9a8; } .band .down, .deck-wrap .down, .mybet .down { color: #ff8a96; }
+
+/* ボタン */
+.primary, .secondary, .danger, .warn-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; border-radius: 10px; font-weight: 700; min-height: 40px; padding: 0 14px;
+}
+.primary { background: var(--fg); color: var(--bg); }
+.primary.big { min-height: 54px; font-size: 16px; border-radius: 14px; width: 100%; }
+.secondary { background: var(--sheet); border: 1px solid var(--line); }
+.danger { background: var(--sheet); border: 1px solid var(--line); color: var(--banker); }
+.warn-btn { background: var(--warning); color: #000; min-height: 26px; font-size: 12px; padding: 0 8px; border-radius: 7px; }
+.wide { width: 100%; }
+.row-btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; }
+
+/* 札 */
+.pill { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; white-space: nowrap; }
+.pill.open { background: var(--warning); color: #000; }
+.pill.open i { width: 7px; height: 7px; border-radius: 50%; background: #000; }
+.pill.closed { background: var(--banker); color: #fff; }
+.o-pill { display: inline-block; color: #fff; font-weight: 700; font-size: 11px; padding: 1px 7px; border-radius: 20px; }
+.o-pill.B { background: var(--banker); } .o-pill.P { background: var(--player); } .o-pill.T { background: var(--tie); }
+.o-pill.big { font-size: 22px; padding: 4px 16px; }
+
+/* 上の帯 */
+.band {
+  flex: none; display: flex; gap: 10px; align-items: stretch; background: var(--deck); color: var(--deck-fg);
+  padding: 8px calc(var(--sr) + 12px) 8px calc(var(--sl) + 12px); overflow: hidden;
+}
+.band-info { display: flex; gap: 10px; flex: none; font-size: 11px; line-height: 1.3; }
+.band-info > div { display: flex; flex-direction: column; gap: 3px; justify-content: center; }
+.band-info small { font-size: 9px; opacity: .7; }
+.band .code { font: 600 20px var(--font-num); letter-spacing: .06em; }
+.band .bank { font-size: 11px; }
+.band-last { flex: none; display: flex; flex-direction: column; gap: 2px; justify-content: center; font-size: 11px; }
+.band-members { display: flex; gap: 6px; overflow-x: auto; flex: 1; min-width: 0; align-items: stretch; scrollbar-width: none; }
+.band-members::-webkit-scrollbar { display: none; }
+.band-members > .pill { align-self: center; }
+.m-col { display: flex; flex-direction: column; gap: 3px; flex: none; }
+.member {
+  background: var(--deck-btn); color: var(--deck-fg); border-radius: 8px; padding: 5px 8px; min-width: 116px; text-align: left;
+  display: flex; flex-direction: column; gap: 1px; font-size: 11px; line-height: 1.3; flex: none; border: 1.5px solid transparent;
+}
+button.member:active { filter: brightness(1.15); }
+.member.me { background: #3e4c45; border-color: rgba(243,246,244,.9); }
+.m-top { display: flex; gap: 4px; align-items: baseline; }
+.m-top b { font-size: 12px; max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.m-top small { font-size: 9px; opacity: .7; }
+.m-top em { font-style: normal; font: 600 11px var(--font-num); }
+.m-bal { opacity: .85; } .m-bal small { font-size: 9px; opacity: .75; }
+.m-bets { display: flex; gap: 5px; font: 600 11px var(--font-num); }
+.m-bets .b { color: #ff8a96; } .m-bets .p { color: #9db6ff; } .m-bets .t { color: #6fd9a8; }
+.m-none { opacity: .6; }
+.m-ask { align-self: flex-start; background: var(--warning); color: #000; font-size: 9px; font-weight: 700; padding: 0 6px; border-radius: 10px; }
+.add-member { flex: none; display: flex; align-items: center; gap: 4px; background: var(--deck-btn); border-radius: 8px; padding: 0 10px; font-size: 12px; font-weight: 700; }
+
+/* 勝敗の入力盤（親） */
+.deck-wrap.dealer { display: flex; flex-direction: column; justify-content: flex-end; }
+.screen.side .deck-wrap.dealer { justify-content: space-between; }
+.deck-top { padding: 8px 10px 0; display: flex; flex-direction: column; gap: 6px; }
+.close-btn { background: var(--warning); color: #000; border-radius: 10px; min-height: 40px; font-weight: 700; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.close-bar { display: flex; align-items: center; gap: 6px; min-height: 28px; }
+.close-bar small, .deck-label { font-size: 11px; opacity: .7; }
+.deck-label { font-weight: 700; }
+
+/* あなたのベット（親もベットするとき） */
+.mybet { flex: none; width: 270px; background: #2f3a34; color: var(--deck-fg); padding: 10px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; justify-content: flex-end; }
+.mybet.inline { width: auto; border-radius: 12px; margin-top: 10px; }
+.mybet-head { display: flex; align-items: center; justify-content: space-between; font-size: 12px; }
+
+/* ベットの盤 */
+.deck-wrap.player { padding: 10px; display: flex; flex-direction: column; gap: 8px; justify-content: flex-end; }
+.screen.stack .deck-wrap.player { padding: 8px calc(var(--sr) + 10px) calc(var(--sb) + 8px) calc(var(--sl) + 10px); }
+.betpad { display: flex; flex-direction: column; gap: 7px; color: var(--deck-fg); }
+.bp-limits { margin: 0; font-size: 10px; opacity: .75; }
+.bp-closed { background: var(--banker); color: #fff; border-radius: 8px; padding: 4px 6px; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 2px 6px; font-size: 12px; }
+.bp-closed small { font-size: 10px; opacity: .85; width: 100%; text-align: center; }
+.bp-row { display: flex; gap: 6px; }
+.bp-row > * { flex: 1; min-width: 0; }
+.fig { background: var(--deck-btn); border-radius: 8px; padding: 3px 4px; text-align: center; display: flex; flex-direction: column; line-height: 1.2; }
+.fig small { font-size: 10px; opacity: .7; }
+.fig b { font-size: 15px; overflow: hidden; text-overflow: ellipsis; }
+.betpad.is-closed .bp-keys { opacity: .4; }
+.bp-keys { display: flex; flex-direction: column; gap: 6px; }
+.spot { border-radius: 12px; color: #fff; min-height: 40px; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.2; border: 2px solid transparent; opacity: 1; }
+.spot b { font-size: 13px; } .spot small { font-size: 10px; opacity: .75; }
+.spot.tall { min-height: 64px; } .spot.tall b { font-size: 16px; }
+.betpad.compact .spot.tall { min-height: 48px; }
+.spot.b { background: color-mix(in srgb, var(--banker) 55%, var(--deck)); }
+.spot.p { background: color-mix(in srgb, var(--player) 55%, var(--deck)); }
+.spot.t { background: color-mix(in srgb, var(--tie) 55%, var(--deck)); }
+.spot.on { border-color: #fff; } .spot.on small { opacity: 1; }
+.spot.b.on { background: var(--banker); } .spot.p.on { background: var(--player); } .spot.t.on { background: var(--tie); }
+.bp-row .spot.t.tall { flex: 0 0 76px; }
+.spot:disabled { opacity: 1; }
+.padbtn { background: var(--deck-btn); border-radius: 8px; min-height: 32px; font-size: 12px; font-weight: 700; }
+.settle-line { font-size: 12px; display: flex; flex-direction: column; gap: 2px; }
+.settle-line > div { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.settle-line small { font-size: 11px; opacity: .85; }
+.deck-card { background: var(--deck); border-radius: 16px; padding: 14px; margin: 10px 0; }
+
+/* 金額のシート */
+.amount { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: center; }
+@media (max-width: 480px) { .amount { grid-template-columns: 1fr; } }
+.amount-left { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
+.amount-value { font-size: 40px; font-weight: 700; line-height: 1.1; }
+.amount-right { display: flex; flex-direction: column; gap: 8px; }
+.amount-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.amt { background: var(--sheet); border: 1px solid var(--line); border-radius: 12px; min-height: 46px; font: 600 16px var(--font-num); }
+.amount-right .primary { min-height: 46px; }
+
+/* NO MORE BETS */
+.nomore { position: fixed; inset: 0; background: rgba(0,0,0,.82); color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; z-index: 4; animation: fade .15s; transition: opacity .3s; text-align: center; padding: 20px; }
+.nomore b { font-size: clamp(40px, 11vw, 80px); font-weight: 700; letter-spacing: .02em; line-height: 1; }
+.nomore span { font-size: 16px; opacity: .8; }
+
+/* 入力欄 */
+.field { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.field > span { width: 80px; flex: none; font-size: 13px; }
+.field.col { flex-direction: column; align-items: stretch; gap: 4px; }
+.field.col > span { width: auto; font-weight: 700; }
+.field input, .field select, .ask-form input {
+  flex: 1; min-width: 0; height: 40px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); padding: 0 10px; font-size: 16px;
+}
+.field em { font-style: normal; color: var(--muted); }
+.choices { display: flex; gap: 6px; flex-wrap: wrap; }
+.choice { flex: 1 1 auto; min-height: 40px; border-radius: 10px; background: var(--bg); font-weight: 700; font-size: 13px; padding: 0 10px; white-space: nowrap; }
+.choice[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+.limit-now { margin: 8px 0 0; font-size: 13px; }
+.toggle-row { display: flex; width: 100%; align-items: center; gap: 10px; text-align: left; padding: 8px 0; }
+.toggle-row + .toggle-row { border-top: 1px solid var(--line); }
+.toggle-row span { flex: 1; display: flex; flex-direction: column; }
+.toggle-row small { color: var(--muted); font-size: 12px; }
+.switch { width: 46px; height: 28px; border-radius: 14px; background: var(--line-strong); position: relative; flex: none; transition: background .15s; }
+.switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 24px; height: 24px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: transform .15s; }
+[aria-checked="true"] > .switch { background: var(--tie); }
+[aria-checked="true"] > .switch::after { transform: translateX(18px); }
+.ask-form { display: flex; flex-direction: column; gap: 10px; }
+.ask-form p { margin: 0; }
+
+/* テーブルを作る */
+.setup { flex: 1; min-height: 0; display: flex; gap: 14px; padding: 12px calc(var(--sr) + 16px) calc(var(--sb) + 12px) calc(var(--sl) + 16px); overflow-y: auto; }
+.setup.side { align-items: flex-start; }
+.setup.stack { flex-direction: column; }
+.setup-form { flex: 1; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.setup.side .setup-form { overflow-y: auto; max-height: 100%; padding-bottom: 12px; }
+.setup-side { width: 280px; flex: none; display: flex; flex-direction: column; gap: 10px; position: sticky; top: 0; }
+.setup.stack .setup-side { width: 100%; position: static; }
+.setup .card-box h4, .manage .card-box h4 { font-size: 12px; color: var(--muted); }
+.setup-summary { background: var(--deck); color: var(--deck-fg); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+.setup-summary small { font-size: 11px; opacity: .7; font-weight: 700; }
+.setup-summary h3 { margin: 0; font-size: 18px; }
+.setup-summary p { margin: 0; font-size: 11px; opacity: .65; }
+.s-row { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; }
+.s-row span { opacity: .75; }
+
+/* 参加する */
+.join { flex: 1; overflow-y: auto; display: flex; padding: 20px calc(var(--sr) + 16px) calc(var(--sb) + 20px) calc(var(--sl) + 16px); }
+.join-card { margin: auto; width: 100%; max-width: 420px; background: var(--sheet); border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+.join-card p { margin: 0; }
+.code-input { font-size: 28px !important; height: 56px !important; letter-spacing: .3em; text-align: center; }
+
+/* テーブルのシート */
+.manage { display: flex; flex-direction: column; gap: 10px; }
+.manage-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.kv { display: flex; flex-direction: column; }
+.kv > div { display: flex; justify-content: space-between; align-items: baseline; padding: 6px 0; gap: 10px; font-size: 14px; }
+.kv > div + div { border-top: 1px solid var(--line); }
+.kv span { color: var(--muted); font-size: 13px; }
+.kv .code { font-size: 24px; letter-spacing: .08em; }
+.people, .moves { list-style: none; margin: 0; padding: 0; }
+.people li { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-top: 1px solid var(--line); font-size: 14px; }
+.people li:first-child { border-top: 0; }
+.people .del { color: var(--banker); font-size: 12px; font-weight: 700; padding: 4px 6px; }
+.moves li { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-top: 1px solid var(--line); font-size: 13px; }
+.moves li span { flex: 1; }
+.tag { background: var(--warning); color: #000; font-size: 10px; font-weight: 700; padding: 0 6px; border-radius: 8px; flex: none !important; }
+
+/* 結果 */
+.summary { display: flex; flex-direction: column; gap: 10px; }
+.summary h4 { margin: 4px 0 0; }
+.bank-row { display: flex; align-items: center; gap: 12px; padding: 4px 4px; color: var(--muted); }
+.bank-row div { flex: 1; display: flex; flex-direction: column; color: var(--fg); }
+.bank-row small { font-size: 11px; color: var(--muted); }
+.bank-row strong { font-size: 18px; }
+.result-rows { list-style: none; margin: 0; padding: 0; background: var(--sheet); border-radius: 12px; }
+.result-rows li { display: flex; gap: 12px; align-items: center; padding: 10px 12px; border-top: 1px solid var(--line); position: relative; }
+.result-rows li:first-child { border-top: 0; }
+.result-rows li.me { background: color-mix(in srgb, var(--player) 8%, var(--sheet)); }
+.result-rows li.me::before { content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 4px; border-radius: 2px; background: var(--fg); }
+.result-rows .grow { display: flex; flex-direction: column; }
+.result-rows .grow small { color: var(--muted); font-size: 12px; }
+.rank { width: 22px; color: var(--muted); font-weight: 600; }
+.you { display: inline-block; background: var(--fg); color: var(--bg); font-size: 10px; font-weight: 700; padding: 0 6px; border-radius: 10px; margin-left: 6px; }
+.r-net { text-align: right; display: flex; flex-direction: column; }
+.r-net strong { font-size: 16px; }
+.r-net small { color: var(--muted); font-size: 11px; }
+.screen.side .deck-wrap.player { padding-right: calc(var(--sr) + 10px); }
+/* 帯がある画面は高さが足りないので、集計を小さくする */
+.band ~ .screen .stat { padding: 3px 4px; }
+.band ~ .screen .stat b { font-size: 16px; }
+.band ~ .screen .stat small { display: none; }

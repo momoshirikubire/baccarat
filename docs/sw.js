@@ -1,8 +1,9 @@
 // オフラインでも開けるように、同じサイトのファイルを控えておく（ネットにつながるときは新しいほうを使う）
-const CACHE = 'bn-web-v2';
+const CACHE = 'bn-web-v3';
 const FILES = [
   './', './index.html', './manifest.webmanifest', './css/app.css',
   './js/app.js', './js/model.js', './js/draw.js', './js/ui.js', './js/shoes.js', './js/board.js', './js/sheets.js', './js/config.js',
+  './js/table.js', './js/chipui.js', './js/net.js', './js/dealer.js', './js/player.js',
   './icon-180.png', './icon-192.png', './icon-512.png', './icons/developer.jpg',
 ];
 self.addEventListener('install', e => {

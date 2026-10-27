@@ -14,6 +14,9 @@ export const prefs = {
   set tieStyle(v) { store.set('bn.tieStyle', v); },
   get announce() { return store.get('bn.announce', true); },
   set announce(v) { store.set('bn.announce', v); },
+  // 親とプレイヤーの画面の読み上げ（アプリの speakResults）
+  get speak() { return store.get('bn.speak', true); },
+  set speak(v) { store.set('bn.speak', v); },
 };
 
 // ---- 応援のお願い（TipNudge）：新しいシュー・テーブルを終えたときを数え、2回ごとに出す ----
@@ -51,6 +54,7 @@ function setScreen(screen) {
 
 function start(mode) {
   store.set('bn.mode', mode);
+  app.onclick = app.oninput = app.onsubmit = null;
   MODES[mode]();
 }
 
@@ -63,6 +67,7 @@ export function leaveToPicker() {
 
 function showPicker() {
   current?.dispose?.();
+  app.oninput = app.onsubmit = null;
   current = { render: showPicker };
   const card = (mode, iconName, title, role, detail) => `<button class="mode-card" data-mode="${mode}">
     <span class="mode-icon">${icon(iconName, 26)}</span><b>${title}</b>${role ? `<em>${role}</em>` : ''}<span>${detail}</span></button>`;
@@ -161,8 +166,8 @@ addEventListener('resize', () => {
 });
 
 const saved = store.get('bn.mode', null);
-// テーブルは開き直すと入り直しになるので、罫線だけのとき以外は使い方の選択から始める
-if (saved === 'roads') start('roads');
+// 罫線だけと、続きのテーブルがある親は、その画面から始める（プレイヤーは番号を入れ直す）
+if (saved === 'roads' || (saved === 'dealer' && store.get('bn.host', null))) start(saved);
 else showPicker();
 
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js');
