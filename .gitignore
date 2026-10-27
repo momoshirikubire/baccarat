@@ -6,3 +6,5 @@ build/
 
 # App Store 用のスクリーンショット（Mac にだけ置く）
 store-assets/screens/
+build-dd/
+build-dev/
