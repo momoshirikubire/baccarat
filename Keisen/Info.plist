@@ -4,12 +4,5 @@
 <dict>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
-	<key>NSBonjourServices</key>
-	<array>
-		<string>_keisen-chips._tcp</string>
-		<string>_keisen-chips._udp</string>
-	</array>
-	<key>NSLocalNetworkUsageDescription</key>
-	<string>近くの iPhone とつないで、チップのテーブルをみんなで使うために使います。</string>
 </dict>
 </plist>

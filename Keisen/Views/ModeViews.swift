@@ -13,6 +13,10 @@ enum AppMode: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    /// テーブル（チップ）の機能を出すか。pt を賭けて配当で増減する仕組みは App Store では「疑似ギャンブル」にあたり、
+    /// 個人の開発者アカウントでは出せない（2026-10-27 に審査で止められた）。法人で登録したら true に戻す。
+    static let chipTablesEnabled = false
+
     var title: String {
         switch self {
         case .choose: "使い方を選ぶ"
@@ -45,6 +49,15 @@ struct RootView: View {
     }
 
     @ViewBuilder private var content: some View {
+        if !AppMode.chipTablesEnabled {
+            // 1.0 は罫線だけ。使い方の選択とテーブル（チップ）の画面は出さない
+            RoadGameView(store: shoe)
+        } else {
+            modeContent
+        }
+    }
+
+    @ViewBuilder private var modeContent: some View {
         switch mode {
         case .choose:
             ModePickerView { mode = $0 }

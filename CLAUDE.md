@@ -8,13 +8,14 @@
 ## 技術
 - SwiftUI、iOS 17 以降、Swift 5 モード。外部ライブラリなし。
 - プロジェクトは `Keisen.xcodeproj`（スキーム `Keisen`）、ソースは `Keisen/`。Xcode の「フォルダ同期グループ」なので、ファイルを置くだけでビルド対象になる。
-- App Store の名前は「バカラノート - 罫線とチップの記録」（2026-10-26 に「罫線ノート」から変更）、ホーム画面の表示名は「バカラノート」、バンドルIDは `com.tadahonami.keisen`。署名チームは pbxproj に入れていないので、Xcode の Signing & Capabilities でチームを選ぶ（または xcodebuild に `DEVELOPMENT_TEAM=...` を渡す）。
-- `Keisen/Info.plist` には `ITSAppUsesNonExemptEncryption = NO` と、チップのテーブル用のローカルネットワークの説明・Bonjour サービス。アプリアイコンはアルファなしの 1024px PNG。
+- App Store の名前は「バカラノート - 罫線と出目の記録」（2026-10-26 に「罫線ノート」から「罫線とチップの記録」へ、2026-10-27 に 1.0 からテーブル機能を外したので今の名前へ変更）、ホーム画面の表示名は「バカラノート」、バンドルIDは `com.tadahonami.keisen`。署名チームは pbxproj に入れていないので、Xcode の Signing & Capabilities でチームを選ぶ（または xcodebuild に `DEVELOPMENT_TEAM=...` を渡す）。
+- `Keisen/Info.plist` には `ITSAppUsesNonExemptEncryption = NO` だけ（チップのテーブル用のローカルネットワークの説明 `NSLocalNetworkUsageDescription`「近くの iPhone とつないで、チップのテーブルをみんなで使うために使います。」と Bonjour サービス `_keisen-chips._tcp` / `_keisen-chips._udp` は、1.0 でテーブル機能を外したので消した。戻すときに入れ直す）。アプリアイコンはアルファなしの 1024px PNG。
 - `Keisen/PrivacyInfo.xcprivacy`：データ収集なし、UserDefaults（チップ回数の保存）の理由 CA92.1。
 - `Keisen.storekit`：チップのテスト用設定。スキームの Run → Options → StoreKit Configuration で選ぶとシミュレータで買える。
 
 ## フォルダ構成
 - ツールバーのボタンは、アイコンだけにせず文字をつける（ツールバーの中では `Label(...).labelStyle(.titleAndIcon)` でもアイコンだけになるので、`ToolbarTitle`（`Views/ModeViews.swift`、アイコンと文字の HStack）を使う：「使い方」「履歴」「表示」「新しいシュー」「テーブル」「テーブルを閉じる」「持ち点に戻す」「テーブルから抜ける」など）。
+- **1.0 は罫線だけで出す**（2026-10-27）：テーブル（チップ）の機能は pt を賭けて配当で増減するので App Store の「疑似ギャンブル」にあたり、疑似ギャンブルを含むアプリは法人の開発者アカウントでないと出せない（個人アカウントで出した 1.0 (3) が自動で止められた）。`AppMode.chipTablesEnabled = false` で、`RootView` は使い方の選択を出さずに `RoadGameView` だけを出す。テーブル機能のコードは残してあり、法人で登録したら true に戻し、Info.plist のローカルネットワークの項目と年齢区分 18+ を戻して出す。以下はテーブル機能を出すときの説明。
 - 1.0 はバカラだけ（`App/KeisenApp.swift` はタブなしで `RootView` を出す）。起動したら最初に使い方を選ぶ（`Views/ModeViews.swift` の `AppMode`、`@AppStorage("appMode")` で覚えて次からその画面で始まる。左上の `ModeButton` でいつでも変えられ、テーブルを持っている・参加しているときは確かめてから閉じる／抜ける）：「罫線だけ」＝ `RoadGameView`（1.0 と同じ見た目。チップは出さない）、「テーブルを作る（勝敗を記録する）」＝ `DealerView`、「テーブルに参加する（プレイヤー）」＝ `PlayerView`。ドラゴンタイガー・ブラックジャック・ポーカー・点数表のコードは残してあり、あとのアップデートで TabView に戻して出す。右上の「応援」から応援画面を開ける（`.tipButton()`）。
 - 画面は横向きだけ（pbxproj の UISupportedInterfaceOrientations_iPhone）。横向き（verticalSizeClass が compact）では、大路のマスを画面の高さに収まる大きさにして入力盤を右端に置く。縦向きのレイアウトのコードも残してある。
 - バカラ画面は大路だけが基本（大きめのマス）。「珠盤路・下三路・問路も見る」で残りの罫線と入力盤の問路を出す（`@AppStorage("roads.showAll")`。2026-10-26 にキー名を変えて、試していた端末も大路だけに戻した）。横向きで大路だけのときは、集計（`MiniStats`）を右の細い列（幅200）に移し、BANKER・PLAYER・TIE のボタンを縦に並べて、大路のマスを大きくする。過去のシューは全部出す。
@@ -39,7 +40,7 @@
   - 追加（リバイ）：親は帯の名前の下の「追加する」か、名前を押したシートの「ポイントを追加する」で、場から pt を足す（初期値は持ち点と同じ。`ChipMove.kind = .rebuy` で履歴に「追加」と出す）。プレイヤーは使える額が下限（なければ 1 pt）より少なくなると「親に追加をお願いする」（`.rebuyRequest`）を押せ、親の帯に「追加をお願い中」が出る（`ChipTable.rebuyRequests`、足したら消える）。
   - 参加者ごとの成績（`ChipStats`：もらった合計＝はじめの持ち点＋追加、勝った手・ベットした手、追加の回数と合計）。帯には「残高（通算 ±）」、結果には「最後の残高 − もらった合計」を出す。
   - 終了と結果（`ChipSummary`・`Views/Chips/SummaryView.swift`）：親の「終了する」で、結果（参加者ごとの残高・増減・勝った手／ベットした手・追加、増減の大きい順、テーブル名・時間・手の数）を `.ended` で全員に送ってから少し待って切る。親とプレイヤーの画面いっぱいに結果を出し（自分の行を目立たせる）、「閉じる」で使い方を選ぶ画面に戻る。親の端末には直近10回を `chip-results.json` に残し、「テーブルを作る」画面の「これまでの結果」から見られる。プレイヤーが自分で抜けるときもその時点の結果を出す。だれがだれに払うといった精算の表示は出さない。場（親）の収支（`ChipTable.bankNet`＝精算で場が受け取った pt − 払った pt、持ち点の配布と追加は含めない。プレイヤー全員の通算の増減の合計のマイナスと同じ。古いデータはそこから出す）を、親の帯の参加番号の下と、結果画面のいちばん上にプレイヤーとは分けて出す（`ChipSummary.bankNet` で全員に配る）。
-  - 精算があるので年齢区分は 18+（新しい区分。了承済み、`APPSTORE.md`）。
+  - 精算があるので年齢区分は 18+（新しい区分。了承済み、`APPSTORE.md`）。疑似ギャンブルになるので、法人の開発者アカウントでしか出せない。
 - 点数表（`ScoreStore`・`Views/Scores/`）：参加者×ラウンドの点数。
 - 点数やチップはすべて「pt（ポイント）」で数え、「円」は使わない（日本では仲間内でもお金を賭けると賭博罪になるため）。
 - `Keisen/Store/TipStore.swift`：StoreKit 2 のチップ。商品ID は `com.tadahonami.keisen.tip.small / medium / large`（消耗型。¥500 / ¥1,000 / ¥2,000）。`tip.huge`（¥5,000）は 2026-10 にやめた。
