@@ -1,0 +1,10 @@
+{
+  "hosting": {
+    "public": "docs",
+    "ignore": ["support.html", "privacy.html", "**/.*"],
+    "headers": [
+      { "source": "**/*.@(js|css|html|webmanifest)", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] }
+    ]
+  },
+  "firestore": { "rules": "firebase/firestore.rules" }
+}
