@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Web 版のテーブルについて｜バカラノート</title>
+<style>
+:root { --bg: #eef1ee; --fg: #18201c; --muted: #5d6a63; --sheet: #fff; --line: #dfe5e1; }
+@media (prefers-color-scheme: dark) { :root { --bg: #111613; --fg: #e8ede9; --muted: #9aa69f; --sheet: #1a201c; --line: #2c3530; } }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.8 "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif; }
+main { max-width: 680px; margin: 0 auto; padding: 32px 16px 64px; }
+section { background: var(--sheet); border: 1px solid var(--line); border-radius: 10px; padding: 4px 20px; margin: 16px 0; }
+h1 { font-size: 24px; } h2 { font-size: 17px; margin-top: 20px; }
+p.muted { color: var(--muted); font-size: 14px; }
+a { color: inherit; }
+</style>
+</head>
+<body>
+<main>
+<h1>Web 版のテーブルについて</h1>
+<p class="muted">バカラノート（ブラウザ版）　2026年10月31日</p>
+<section>
+<h2>ブラウザ版の「テーブル」を使うとき</h2>
+<p>ブラウザ版で、テーブルを作る・参加するときだけ、テーブルの内容（テーブル名、参加者が入れた名前、pt の残高とベット、罫線の結果）を Google の Firebase（Cloud Firestore、東京のサーバー）を通して、同じテーブルの人の画面に届けます。端末を見分けるために、Firebase の匿名ログインの ID を使います。メールアドレスや電話番号などは使いません。</p>
+<p>この内容は、テーブルの4桁の番号を知っている人が見られます。名前には本名ではなく、ニックネームを使ってください。テーブルを終えたあとも、その番号がほかのテーブルに使われるまでサーバーに残ることがあります。開発者がこの内容を広告や分析に使うことはありません。iPhone アプリと、テーブルを使わないブラウザ版は、これまでどおり何も送りません。</p>
+<p><a href="privacy.html">プライバシーポリシー（全体）</a></p>
+</section>
+</main>
+</body>
+</html>

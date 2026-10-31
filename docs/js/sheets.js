@@ -121,6 +121,7 @@ export function openTips() {
         <div><b>広告なしで続けたい！</b><small>作った人：桃尻くびれちゃん</small></div></div>
       <p>画面をすっきり使ってほしくて、広告は入れていません。App Store の登録料は毎年自費なので、応援してもらえると、続ける力と次のアップデートの力になります🍑</p>
       <p class="muted small">応援しなくても、すべての機能を使えます。</p>
+      <p class="muted small"><a href="web-privacy.html" target="_blank" rel="noopener">Web 版のテーブルについて（送る情報）</a></p>
       <div class="sns">
         <a class="sns-btn ig" href="https://www.instagram.com/momoshiri_kubire/" target="_blank" rel="noopener">Instagram</a>
         <a class="sns-btn tt" href="https://www.tiktok.com/@momoshiri_kubire" target="_blank" rel="noopener">TikTok</a>

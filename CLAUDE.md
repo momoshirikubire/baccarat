@@ -46,5 +46,6 @@
 - `Keisen/Store/TipStore.swift`：StoreKit 2 のチップ。商品ID は `com.tadahonami.keisen.tip.small / medium / large`（消耗型。¥500 / ¥1,000 / ¥2,000）。`tip.huge`（¥5,000）は 2026-10 にやめた。
 - 応援画面のいちばん上は作った人からのひとこと（`DeveloperNote`）。名前は「桃尻くびれちゃん」（ユーザーのインフルエンサー名。本名は出さない。本名で検索しても何も出ないことを確認のうえ、2026-10-26 にユーザーが決めた）。Instagram と TikTok（どちらも @momoshiri_kubire）のプロフィールへのボタンだけ置く。
 - `Keisen/Views/`：罫線画面と入力盤（`RoadGameView`）、罫線の描画（`RoadViews`、Canvas）、過去のシュー、応援画面。
-- `docs/`：ブラウザ版（ホーム画面に追加できる PWA）。GitHub Pages で `docs/` を公開する。
+- `docs/`：ブラウザ版（ホーム画面に追加できる PWA）。GitHub Pages で `docs/` を公開する。2026-10-31 から、テーブル（チップ）機能つきの Web 版を作っている（`web-app` ブランチ。`docs/js/table.js` がアプリの ChipTable の移植、`net.js` が Firestore でつなぐ部分、ルールは `firebase/firestore.rules`）。
+  - **アプリと Web 版は切り離す**（2026-10-31 ユーザーと決定）：アプリは罫線だけで、Web 版へのリンクは置かない（疑似ギャンブルへのリンクと見なされると、個人アカウントで出せなくなるため）。Web 版の URL は友だちに直接や SNS で渡す。App Store に載せるサポート・プライバシーのページからも Web 版のテーブルにはリンクしない（テーブルの送る情報の説明は `docs/web-privacy.html`）。
 - `APPSTORE.md`：App Store 提出の手順。配信国は日本のみ（2026-10-26）。
