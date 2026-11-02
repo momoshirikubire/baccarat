@@ -1,5 +1,5 @@
 // オフラインでも開けるように、同じサイトのファイルを控えておく（ネットにつながるときは新しいほうを使う）
-const CACHE = 'bn-web-v3';
+const CACHE = 'bn-web-v4';
 const FILES = [
   './', './index.html', './manifest.webmanifest', './css/app.css',
   './js/app.js', './js/model.js', './js/draw.js', './js/ui.js', './js/shoes.js', './js/board.js', './js/sheets.js', './js/config.js',

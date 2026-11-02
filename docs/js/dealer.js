@@ -255,6 +255,8 @@ function tableScreen(api, saved) {
   const render = () => {
     if (disposed) return;
     const land = isLandscape();
+    // 横向きの iPhone の Safari は高さがとても低いので、集計を外して大路を高さに合わせる
+    const short = land && innerHeight < 520;
     const tb = t();
     const showAll = prefs.showAll;
     const hands = sharedHands();
@@ -269,7 +271,7 @@ function tableScreen(api, saved) {
       </header>
       ${band()}
       <main class="screen ${land ? 'side' : 'stack'}">
-        <div class="pane">${boardHTML(hands, { showAll, compact: false })}
+        <div class="pane">${boardHTML(hands, { showAll, compact: short })}
           ${mine && !land ? `<div class="mybet inline"><div class="mybet-head"><b>あなたのベット</b><button class="warn-btn" data-action="rebuy" data-id="${esc(state.myID)}">ポイントを追加</button></div><div data-mybet>${betPadHTML(mine)}</div></div>` : ''}
         </div>
         ${mine && land ? `<aside class="mybet"><div class="mybet-head"><b>あなたのベット</b><button class="warn-btn" data-action="rebuy" data-id="${esc(state.myID)}">ポイントを追加</button></div><div data-mybet>${betPadHTML(mine)}</div></aside>` : ''}
@@ -278,7 +280,7 @@ function tableScreen(api, saved) {
           ${deckHTML(shoes.hands, { narrow: false, showAsk: showAll, pairs, canUndo: shoes.canUndo })}
         </aside>
       </main>`;
-    requestAnimationFrame(() => paintBoard(app.querySelector('.pane'), hands, { showAll, compact: false, tieStyle: prefs.tieStyle }));
+    requestAnimationFrame(() => paintBoard(app.querySelector('.pane'), hands, { showAll, compact: short, tieStyle: prefs.tieStyle }));
   };
 
   bindBetPad(app, () => disposed ? null : myBetOpts());

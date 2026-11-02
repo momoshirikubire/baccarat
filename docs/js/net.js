@@ -15,8 +15,8 @@ export const netAvailable = () => !!FIREBASE || new URLSearchParams(location.sea
 
 async function getBackend() {
   if (backend) return backend;
-  if (FIREBASE) backend = await firebaseBackend();
-  else if (new URLSearchParams(location.search).has('local')) backend = localBackend();
+  if (new URLSearchParams(location.search).has('local')) backend = localBackend();
+  else if (FIREBASE) backend = await firebaseBackend();
   else throw new Error('テーブルの通信はまだ準備中です。');
   return backend;
 }

@@ -178,6 +178,8 @@ function tableScreen(api, { code, tableId, uid }) {
   const render = () => {
     if (disposed) return;
     const land = isLandscape();
+    // 横向きの iPhone の Safari は高さがとても低いので、集計を外して大路を高さに合わせる
+    const short = land && innerHeight < 520;
     const m = me();
     if (!table || !m) {
       app.innerHTML = `<header class="toolbar"><div class="tb-left">${modeButton()}</div></header>
@@ -194,14 +196,14 @@ function tableScreen(api, { code, tableId, uid }) {
       </header>
       ${band()}
       <main class="screen ${land ? 'side' : 'stack'}">
-        <div class="pane">${boardHTML(hands, { showAll, compact: false })}</div>
+        <div class="pane">${boardHTML(hands, { showAll, compact: short })}</div>
         <aside class="deck-wrap player" style="${land ? 'width:340px' : ''}">
           ${needsRebuy() ? `<button class="warn-btn wide" data-action="ask-rebuy" ${asked ? 'disabled' : ''}>${asked ? '追加をお願いしました' : '親に追加をお願いする'}</button>` : ''}
           ${betPadHTML(betOpts())}
           ${settlementLine(T.lastRound(table), uid)}
         </aside>
       </main>`;
-    requestAnimationFrame(() => paintBoard(app.querySelector('.pane'), hands, { showAll, compact: false, tieStyle: prefs.tieStyle }));
+    requestAnimationFrame(() => paintBoard(app.querySelector('.pane'), hands, { showAll, compact: short, tieStyle: prefs.tieStyle }));
   };
 
   const manage = () => {

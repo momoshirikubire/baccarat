@@ -33,7 +33,7 @@ export function paintBoard(root, hands, { showAll, compact, tieStyle }) {
   if (showAll) cell = 22 * scale;
   else if (landscape) {
     const h = root.querySelector('.board')?.parentElement?.clientHeight || innerHeight;
-    cell = Math.max(22, Math.min(compact ? 80 : 42, (h - (compact ? 56 : 130)) / ROWS));
+    cell = Math.max(compact ? 14 : 22, Math.min(compact ? 80 : 42, (h - (compact ? 56 : 130)) / ROWS));
   } else cell = 38;
   drawBigRoad(big, hands, cell, tieStyle);
   if (!showAll) return;
